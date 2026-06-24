@@ -1,0 +1,4 @@
+-- Seed data for local development.
+--
+-- Keep this file safe to run repeatedly. Once the operational tables settle,
+-- use it for realistic dev fixtures rather than production data.
