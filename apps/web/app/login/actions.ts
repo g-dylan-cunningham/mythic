@@ -3,8 +3,32 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
-function redirectWithError(message: string): never {
-  redirect(`/login?error=${encodeURIComponent(message)}`);
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  if (
+    error &&
+    typeof error === "object" &&
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message
+  ) {
+    return error.message;
+  }
+
+  if (typeof error === "string" && error) {
+    return error;
+  }
+
+  return "Sign in failed. Check your email and password.";
+}
+
+function redirectWithError(message: unknown): never {
+  const safeMessage = getErrorMessage(message);
+
+  redirect(`/login?error=${encodeURIComponent(safeMessage)}`);
 }
 
 export async function signIn(formData: FormData) {
@@ -22,7 +46,7 @@ export async function signIn(formData: FormData) {
   });
 
   if (error) {
-    redirectWithError(error.message);
+    redirectWithError(error);
   }
 
   redirect("/dashboard");
