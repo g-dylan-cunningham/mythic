@@ -27,6 +27,15 @@ cd apps/web
 npm run dev
 ```
 
+Configure the Supabase target in `apps/web/.env.local`:
+
+```bash
+NEXT_PUBLIC_SUPABASE_TARGET=development
+```
+
+Use `development` for the hosted Supabase dev project and `local` for the
+Docker-based local stack. See `apps/web/.env.local.example` for the full shape.
+
 Start the local Supabase stack:
 
 ```bash
