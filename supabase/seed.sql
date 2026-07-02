@@ -33,7 +33,7 @@ values
     '10000000-0000-0000-0000-000000000001',
     'authenticated',
     'authenticated',
-    'owner@mythic.com',
+    'owner@mythic.press',
     crypt('flower1234', gen_salt('bf')),
     now(),
     '',
@@ -57,7 +57,7 @@ values
     '10000000-0000-0000-0000-000000000002',
     'authenticated',
     'authenticated',
-    'admin@mythic.com',
+    'admin@mythic.press',
     crypt('flower1234', gen_salt('bf')),
     now(),
     '',
@@ -81,7 +81,7 @@ values
     '10000000-0000-0000-0000-000000000003',
     'authenticated',
     'authenticated',
-    'staff@mythic.com',
+    'staff@mythic.press',
     crypt('flower1234', gen_salt('bf')),
     now(),
     '',
@@ -91,6 +91,30 @@ values
     '',
     '{"provider":"email","providers":["email"]}'::jsonb,
     '{"full_name":"Mythic Staff"}'::jsonb,
+    now(),
+    now(),
+    null,
+    '',
+    '',
+    '',
+    false,
+    false
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '10000000-0000-0000-0000-000000000004',
+    'authenticated',
+    'authenticated',
+    'cole@mythic.press',
+    crypt('flower1234', gen_salt('bf')),
+    now(),
+    '',
+    '',
+    '',
+    '',
+    '',
+    '{"provider":"email","providers":["email"]}'::jsonb,
+    '{"full_name":"Cole"}'::jsonb,
     now(),
     now(),
     null,
@@ -132,7 +156,7 @@ values
   (
     '10000000-0000-0000-0000-000000000001',
     '10000000-0000-0000-0000-000000000001',
-    '{"sub":"10000000-0000-0000-0000-000000000001","email":"owner@mythic.com","email_verified":true,"phone_verified":false}'::jsonb,
+    '{"sub":"10000000-0000-0000-0000-000000000001","email":"owner@mythic.press","email_verified":true,"phone_verified":false}'::jsonb,
     'email',
     now(),
     now(),
@@ -142,7 +166,7 @@ values
   (
     '10000000-0000-0000-0000-000000000002',
     '10000000-0000-0000-0000-000000000002',
-    '{"sub":"10000000-0000-0000-0000-000000000002","email":"admin@mythic.com","email_verified":true,"phone_verified":false}'::jsonb,
+    '{"sub":"10000000-0000-0000-0000-000000000002","email":"admin@mythic.press","email_verified":true,"phone_verified":false}'::jsonb,
     'email',
     now(),
     now(),
@@ -152,12 +176,22 @@ values
   (
     '10000000-0000-0000-0000-000000000003',
     '10000000-0000-0000-0000-000000000003',
-    '{"sub":"10000000-0000-0000-0000-000000000003","email":"staff@mythic.com","email_verified":true,"phone_verified":false}'::jsonb,
+    '{"sub":"10000000-0000-0000-0000-000000000003","email":"staff@mythic.press","email_verified":true,"phone_verified":false}'::jsonb,
     'email',
     now(),
     now(),
     now(),
     '20000000-0000-0000-0000-000000000003'
+  ),
+  (
+    '10000000-0000-0000-0000-000000000004',
+    '10000000-0000-0000-0000-000000000004',
+    '{"sub":"10000000-0000-0000-0000-000000000004","email":"cole@mythic.press","email_verified":true,"phone_verified":false}'::jsonb,
+    'email',
+    now(),
+    now(),
+    now(),
+    '20000000-0000-0000-0000-000000000004'
   )
 on conflict (provider, provider_id) do update
 set
@@ -174,23 +208,30 @@ insert into public.profiles (
 values
   (
     '10000000-0000-0000-0000-000000000001',
-    'owner@mythic.com',
+    'owner@mythic.press',
     'Mythic Owner',
     'owner',
     true
   ),
   (
     '10000000-0000-0000-0000-000000000002',
-    'admin@mythic.com',
+    'admin@mythic.press',
     'Mythic Admin',
     'admin',
     true
   ),
   (
     '10000000-0000-0000-0000-000000000003',
-    'staff@mythic.com',
+    'staff@mythic.press',
     'Mythic Staff',
     'staff',
+    true
+  ),
+  (
+    '10000000-0000-0000-0000-000000000004',
+    'cole@mythic.press',
+    'Cole',
+    'owner',
     true
   )
 on conflict (id) do update

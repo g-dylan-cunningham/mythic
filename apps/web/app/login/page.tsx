@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { signIn } from "./actions";
+import { PendingSubmitButton } from "@/app/components/pending-submit-button";
 import { createClient } from "@/utils/supabase/server";
 
 type LoginPageProps = {
@@ -68,12 +69,13 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </p>
           ) : null}
 
-          <button
+          <PendingSubmitButton
             className="h-11 w-full rounded-md bg-emerald-400 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300"
+            pendingLabel="Signing in"
             type="submit"
           >
             Sign in
-          </button>
+          </PendingSubmitButton>
         </form>
       </section>
     </main>
