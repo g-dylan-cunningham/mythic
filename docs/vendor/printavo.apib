@@ -1,0 +1,5217 @@
+FORMAT: 1A
+HOST: https://www.printavo.com
+
+# Printavo API
+This JSON-based API is used to access information in your Printavo account. Printavo is the simplest way for screen-printing, embroidering and promotional product shops to manage their business.
+
+###### Rate Limiting
+For API requests, we allow a limit of 10 requests for every 5 seconds by IP address or by user login email
+
+
+# Group Sessions
+
+## Sessions [/api/{version}/sessions]
+Login and Logout
+
++ Parameters
+
+   + version (required, string, `v1`) - API version.
+
+### Login [POST]
+
++ Request (application/json)
+
+  +  Attributes (object)
+      + email (required, string)
+      + password (required, string)
+
++ Response 200 (application/json)
+
+   + Headers
+
+            Connection: keep-alive
+
+   + Body
+
+            {
+              "email": "test@example.com",
+              "id": 1,
+              "token": "6WfC-lLQNVs_qGIe93iutw"
+            }
+
+### Logout [DELETE]
+
++ Request (application/json)
+
+  +  Attributes (object)
+      + email (required, string)
+      + token (required, string)
+
++ Response 200 (application/json)
+
+   + Headers
+
+            Connection: keep-alive
+            
+# Group Account
+## Account [/api/{version}/accounts{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Account Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+                "address1": "1200 Broadway",
+                "address2": "",
+                "allow_mobile_app_access?": true,
+                "city": "Denver",
+                "company_name": "DF",
+                "country": "US",
+                "current_visual_id": 32,
+                "id": 10101,
+                "invoice_template": null,
+                "invoice_template_subject_line": null,
+                "invoice_title": "Thank you for your business!",
+                "master_email": "name@example.com",
+                "payment_processor_present?": true,
+                "payment_request_template": null,
+                "phone": "5555555555",
+                "plan": "premium_yearly_3",
+                "plan_allows_pricing_calculation?": true,
+                "plan_allows_qr_coding?": true,
+                "sales_tax": 0.0,
+                "show_invoice_po_number": false,
+                "social_facebook_link": "",
+                "social_twitter_link": "",
+                "state": "Colorado",
+                "terms_and_conditions": null,
+                "use_broder_global_products": true,
+                "use_sanmar_global_products": true,
+                "use_tsc_apparel_global_products": false,
+                "website": "http://www.your-shop.com",
+                "zip": "80204",
+                "pricing_matrices": [
+                    {
+                        "id": 44407,
+                        "name": "Screen Printing Example",
+                        "product_pricing_option": "case_price"
+                    },
+                    {
+                        "id": 44408,
+                        "name": "Embroidery Matrix Example",
+                        "product_pricing_option": "case_price"
+                    }
+                ],
+                "pricing_matrices_cells": [
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 1,
+                        "col_header_label": "1 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 2,
+                        "col_header_label": "2 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 3,
+                        "col_header_label": "3 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 4,
+                        "col_header_label": "4 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 5,
+                        "col_header_label": "5 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 6,
+                        "col_header_label": "6 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 7,
+                        "col_header_label": "7 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 8,
+                        "col_header_label": "8 color"
+                    },
+                    {
+                        "matrix_id": 44407,
+                        "col_header_id": 9,
+                        "col_header_label": "9 color"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 0,
+                        "col_header_label": "0 - 5000 Stitches"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 1,
+                        "col_header_label": "6001 - 7000 Stitches"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 2,
+                        "col_header_label": "7001 - 8000 Stitches"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 3,
+                        "col_header_label": "8001 - 9000 Stitches"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 4,
+                        "col_header_label": "9001 - 10000 Stitches"
+                    },
+                    {
+                        "matrix_id": 44408,
+                        "col_header_id": 5,
+                        "col_header_label": "10000+ Stitches"
+                    }
+                ],
+                "email_templates": [
+                    {
+                        "id": 26939,
+                        "name": "Quote Approval",
+                        "subject_line": "Please approve - [invoice-id]",
+                        "message": "Hi [customer-first-name],\r\n\r\nCould you please click on the button below to approve this quote.\r\n\r\nRespond back with any questions or concerns! Have a great day."
+                    },
+                    {
+                        "id": 26940,
+                        "name": "Quote Follow Up",
+                        "subject_line": "Quote Check-In",
+                        "message": "Hi [customer-first-name],\r\n\r\nWe'd love to help you with your order. We sent a quote that you'll need to approve to move forward.\r\n\r\nCould you please click on the button below to approve this quote.\r\n\r\nRespond back with any questions or concerns! Have a great day."
+                    },
+                    {
+                        "id": 26941,
+                        "name": "Artwork Approval",
+                        "subject_line": "Artwork Approval - [invoice-id]",
+                        "message": "Hi [customer-first-name],\r\n\r\nPlease take a look at the mockup we created. You'll want to review all details on color, design placement, and details of your order.\r\n\r\nClick on the button below to approve!"
+                    },
+                    {
+                        "id": 26942,
+                        "name": "Artwork Follow Up",
+                        "subject_line": "Artwork Follow Up - Action Needed",
+                        "message": "Hi [customer-first-name],\r\n\r\nWe want to get your order moving. Can you please take a look at the mockup we created. You'll want to review all details on color, design placement, and details of your order.\r\n\r\nClick on the button below to approve!"
+                    },
+                    {
+                        "id": 26943,
+                        "name": "Payment Request",
+                        "subject_line": "Payment Request - [invoice-id]",
+                        "message": "Hi [customer-first-name],\r\n\r\nPlease click on the button below to make a payment for your invoice."
+                    },
+                    {
+                        "id": 26944,
+                        "name": "Payment Follow Up",
+                        "subject_line": "Payment Follow Up",
+                        "message": "Hi [customer-first-name],\r\n\r\nJust wanted to follow up on payment for this invoice. We want to move quickly to get your order printed.\r\n\r\nPlease click on the button below to make a payment for your invoice."
+                    },
+                    {
+                        "id": 26945,
+                        "name": "Thanks For Ordering",
+                        "subject_line": "You're the best!",
+                        "message": "Hi [customer-first-name],\r\n\r\nThank you for being an amazing customer. We're always excited to bring ideas to life. If you enjoyed your order, please review us on Yelp.\r\n\r\nIf you have any questions, please respond back and we'll help."
+                    }
+                ],
+                "line_item_size_option_attributes": {
+                    "style_number": true,
+                    "category": true,
+                    "color": false,
+                    "size_yxs": false,
+                    "size_ys": false,
+                    "size_ym": false,
+                    "size_yl": false,
+                    "size_yxl": false,
+                    "size_xs": true,
+                    "size_s": true,
+                    "size_m": true,
+                    "size_l": true,
+                    "size_xl": true,
+                    "size_2xl": false,
+                    "size_3xl": false,
+                    "size_4xl": false,
+                    "size_5xl": false,
+                    "size_6xl": false,
+                    "size_other": true,
+                    "size_6m": false,
+                    "size_12m": false,
+                    "size_18m": false,
+                    "size_24m": false,
+                    "size_2t": false,
+                    "size_3t": false,
+                    "size_4t": false,
+                    "size_5t": false,
+                    "updated_at": "2020-10-21T08:45:41.629-05:00"
+                }
+            }
+
+# Group Users
+
+## Users collection [/api/{version}/users{?email}{?token}{?page}{?per_page}]
+Actions on the Users resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of users per page.
+        + Default: `20`
+
+### Users Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 4,
+                "total_pages": 1
+              },
+              "data": [
+                {
+                  "id": 2659,
+                  "email": "tttttt@t.com",
+                  "name": "affafaf",
+                  "address1": null,
+                  "address2": null,
+                  "city": null,
+                  "state": null,
+                  "zip": null,
+                  "phone": "4848384",
+                  "website": null,
+                  "created_at": "2014-08-18T09:39:34-04:00",
+                  "updated_at": "2014-11-16T02:39:05-05:00",
+                  "owner?": true,
+                  "view_books?": false,
+                  "create_books?": false,
+                  "destroy_books?": false,
+                  "create_orders?": false,
+                  "destroy_orders?": false,
+                  "create_customers?": false,
+                  "destroy_customers?": false,
+                  "only_view_their_orders?": false,
+                  "not_view_pricing?": false,
+                  "only_view_their_customers?": false,
+                  "only_view_tasks_assigned?": false,
+                  "only_view_their_messages?": false,
+                  "hide_all_tasks?": false,
+                  "hide_all_messages?": false,
+                  "hide_all_inquiries?": false,
+                  "tz_time_zone": "Australia/Melbourne"
+                }
+              ]
+            }
+
+## User [/api/{version}/users/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `2659`) - User id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+
+### User Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 2659,
+              "email": "tttttt@t.com",
+              "name": "affafaf",
+              "address1": null,
+              "address2": null,
+              "city": null,
+              "state": null,
+              "zip": null,
+              "phone": "4848384",
+              "website": null,
+              "created_at": "2014-08-18T09:39:34-04:00",
+              "updated_at": "2014-11-16T02:39:05-05:00",
+              "owner?": true,
+              "view_books?": false,
+              "create_books?": false,
+              "destroy_books?": false,
+              "create_orders?": false,
+              "destroy_orders?": false,
+              "create_customers?": false,
+              "destroy_customers?": false,
+              "only_view_their_orders?": false,
+              "not_view_pricing?": false,
+              "only_view_their_customers?": false,
+              "only_view_tasks_assigned?": false,
+              "only_view_their_messages?": false,
+              "hide_all_tasks?": false,
+              "hide_all_messages?": false,
+              "hide_all_inquiries?": false,
+              "tz_time_zone": "Australia/Melbourne"
+            }
+
+# Group Messages
+
+## Messages collection [/api/{version}/messages{?email}{?token}{?page}{?per_page}]
+Actions on the Message resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of customers per page.
+        + Default: `25`
+
+### Messages Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+            "meta": 
+              {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 4,
+                "total_pages": 1
+              },
+            "data": 
+              [
+                {
+                  "from": "queenie@quitzon.name",
+                  "to": "kyla_abernathy@vandervort.name",
+                  "subject": nil,
+                  "created_at": "2017-08-07T10:38:23.616-07:00",
+                  "updated_at": "2017-08-07T10:38:23.616-07:00",
+                  "user_id": 1,
+                  "messageable_id": 1,
+                  "cc_invoice_creator": false,
+                  "messageable_type": "Order",
+                  "to_user": true,
+                  "formatted_delivery_status": "pending",
+                  "bounce_error": nil,
+                  "reply_text": nil,
+                  "text": "Ruh ahuma ooma?"
+                }
+              ]
+            }
+
+### Message Create [POST]
+
++  Attributes (object)
+      + order_id (required, number)
+      + email_message (optional, object)
+        + to (required, string)
+        + text (required, string)
+        + subject (optional, string)
+        + cc_invoice_creator (optional, boolean)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "email_message":
+                {
+                  "to": "elsie@cronin.name",
+                  "text": "Some text",
+                  "subject": "Subject",
+                  "cc_invoice_creator": true
+                },
+              "order_id": 1
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "from": "eda.pouros@corkery.io",
+              "to": "elsie@cronin.name",
+              "subject": "Wuckert, Schneider and Eichmann sent you a message",
+              "created_at": "2017-08-07T12:08:37.364-07:00",
+              "updated_at": "2017-08-07T12:08:37.364-07:00",
+              "user_id": 1,
+              "messageable_id": 1,
+              "text": "Some text",
+              "messageable_type": "Order",
+              "state": "linked",
+              "to_user": false,
+              "delivery_status": nil,
+              "bounce_error": nil,
+              "reply_text": nil,
+              "cc_invoice_creator": nil
+            }
+
+# Group Customers
+
+## Customers collection [/api/{version}/customers{?email}{?token}{?page}{?per_page}{?sort_column}{?direction}{?exclude_sub_customers}]
+Actions on the Customers resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of customers per page.
+        + Default: `25`
+    + sort_column (optional, string) - Column to sort on
+        + Default: `first_name`
+    + direction (optional, string) - Direction to sort
+        + Default: `asc`
+    + exclude_sub_customers (optional, boolean) - Exclude sub customers from results
+        + Default: false
+
+### Customers Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 25,
+                "total_count": 228,
+                "total_pages": 10
+              },
+              "data": [25]
+                {
+                  "id": "282869",
+                  "first_name": "Max",
+                  "last_name": "Tucker ok",
+                  "user_id": 28951,
+                  "fax": "",
+                  "orders_count": 0,
+                  "tax_exempt": true,
+                  "tax_resale_num": "",
+                  "company": "",
+                  "customer_email": "",
+                  "phone": "8473633270",
+                  "extra_notes": "",
+                  "default_payment_term_id": 125,
+                  "customer_id": 0,
+                  "billing_address_attributes": {
+                    "address1": "1500 Sullivan Road",
+                    "address2": "",
+                    "city": "Aurora",
+                    "country": "US",
+                    "state": "Alaska",
+                    "zip": "60506"
+                  },
+                  "shipping_address_attributes": {
+                    "address1": "",
+                    "address2": "",
+                    "city": "",
+                    "country": "US",
+                    "state": "",
+                    "zip": ""
+                  },
+                  "sub_customers_attributes": [
+                    {
+                      "id": 1194979,
+                      "first_name": "Donny",
+                      "last_name": "Tucker",
+                      "user_id": 28951,
+                      "email": "donn@gmail.com",
+                      "phone": "8473421516",
+                      "fax": "",
+                      "customer_id": 282869
+                    },
+                    {
+                      "id": 1194978,
+                      "first_name": "Max",
+                      "last_name": "Tucker",
+                      "user_id": 28951,
+                      "email": "tim@example.com",
+                      "phone": "8473633270",
+                      "fax": "",
+                      "customer_id": 282869
+                    }
+                  ],
+                  "created_at": "2015-12-16T22:18:41-06:00",
+                  "updated_at": "2015-12-16T22:18:41-06:00",
+                  "url": "https://www.printavo.com/customers/282869",
+                  "public_page_url": "https://www.printavo.com/customer/30acce7988bd3de9bb359c5d96f5a3fb"
+                }
+            }
+### Customer Create [POST]
+
++ Attributes (Customer)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "first_name": "John",
+              "last_name": "Doe",
+              "user_id": 28951,
+              "company": "test company",
+              "customer_email": "john@doe.com",
+              "phone": "123",
+              "default_payment_term_id": 125,
+              "shipping_address_attributes": {
+                "address1": "",
+                "address2": "",
+                "city": "",
+                "country": "US",
+                "id": 687140,
+                "state": "",
+                "zip": ""
+              },
+              "billing_address_attributes": {
+                "address1": "1500 Sullivan Road",
+                "address2": "",
+                "city": "Aurora",
+                "country": "US",
+                "id": 687141,
+                "state": "Alaska",
+                "zip": "60506"
+              },
+              "sub_customers_attributes": [
+                {
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516"
+                },
+                {
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "tim@example.com",
+                  "phone": "8473633270"
+                }
+              ]
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 284778,
+              "first_name": "John",
+              "last_name": "Doe",
+              "user_id": 28951,
+              "fax": null,
+              "orders_count": 0,
+              "tax_exempt": false,
+              "tax_resale_num": null,
+              "company": "test company",
+              "customer_email": "john@doe.com",
+              "phone": "123",
+              "extra_notes": "",
+              "default_payment_term_id": 125,
+              "customer_id": 0,
+              "shipping_address": {
+                "address1": null,
+                "address2": null,
+                "city": null,
+                "country": null,
+                "created_at": "2015-12-22T08:55:47-06:00",
+                "id": 691010,
+                "state": null,
+                "updated_at": "2015-12-22T08:55:47-06:00",
+                "zip": null
+              },
+              "billing_address": {
+                "address1": null,
+                "address2": null,
+                "city": null,
+                "country": null,
+                "created_at": "2015-12-22T08:55:47-06:00",
+                "id": 691011,
+                "state": null,
+                "updated_at": "2015-12-22T08:55:47-06:00",
+                "zip": null
+              },
+              "sub_customers_attributes": [
+                {
+                  "id": 284779,
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516",
+                  "fax": null,
+                  "customer_id": 284778
+                },
+                {
+                  "id": 284780
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "tim@example.com",
+                  "phone": "8473633270",
+                  "fax": null,
+                  "customer_id": 284778
+                }
+              ],
+              "created_at": "2015-12-22T08:55:47-06:00",
+              "updated_at": "2015-12-22T08:55:47-06:00",
+              "url": "https://www.printavo.com/customers/284778",
+              "public_page_url": "https://www.printavo.com/customer/e38a098a840f1fa369d8c2049ed662ba"
+            }
+
+        
+### Customers Search [GET /api/{version}/customers/search{?email}{?token}{?page}{?per_page}{?query}{?sort_column}{?direction}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of customers per page.
+        + Default: `25`
+    + query (required, string) - Query to search
+    + sort_column (optional, string) - Column to sort on
+        + Values: `first_name`, `last_name`, `company`, `email`, `orders_count`, `created_at`, `customer_id`
+        + Default: `first_name`
+    + direction (optional, string) - Direction to sort
+        + Default: `asc`
+    
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 25,
+                "total_count": 228,
+                "total_pages": 10
+              },
+              "data": [25]
+                {
+                  "id": "282869",
+                  "first_name": "Max",
+                  "last_name": "Tucker ok",
+                  "user_id": 28951,
+                  "fax": "",
+                  "orders_count": 0,
+                  "tax_exempt": true,
+                  "tax_resale_num": "",
+                  "company": "",
+                  "customer_email": "",
+                  "phone": "8473633270",
+                  "extra_notes": "",
+                  "default_payment_term_id": 125,
+                  "customer_id": 0,
+                  "billing_address_attributes": {
+                    "address1": "1500 Sullivan Road",
+                    "address2": "",
+                    "city": "Aurora",
+                    "country": "US",
+                    "state": "Alaska",
+                    "zip": "60506"
+                  },
+                  "shipping_address_attributes": {
+                    "address1": "",
+                    "address2": "",
+                    "city": "",
+                    "country": "US",
+                    "state": "",
+                    "zip": ""
+                  },
+                  "sub_customers_attributes": [
+                    {
+                      "id": 1194979,
+                      "first_name": "Donny",
+                      "last_name": "Tucker",
+                      "user_id": 28951,
+                      "email": "donn@gmail.com",
+                      "phone": "8473421516",
+                      "fax": "",
+                      "customer_id": "282869"
+                    },
+                    {
+                      "id": 1194978,
+                      "first_name": "Max",
+                      "last_name": "Tucker",
+                      "user_id": 28951,
+                      "email": "tim@example.com",
+                      "phone": "8473633270",
+                      "fax": "",
+                      "customer_id": "282869"
+                    }
+                  ],
+                  "created_at": "2015-12-16T22:18:41-06:00",
+                  "updated_at": "2015-12-16T22:18:41-06:00",
+                  "url": "https://www.printavo.com/customers/282869",
+                  "public_page_url": "https://www.printavo.com/customer/30acce7988bd3de9bb359c5d96f5a3fb"
+                }
+            }
+
+
+
+## Customer [/api/{version}/customers/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `282869`) - Customer id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Customer Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 282869,
+              "first_name": "Max",
+              "last_name": "Tucker",
+              "user_id": 28951,
+              "fax": "",
+              "orders_count": 0,
+              "tax_exempt": true,
+              "tax_resale_num": "",
+              "company": "",
+              "customer_email": "",
+              "phone": "8473633270",
+              "extra_notes": "",
+              "default_payment_term_id": 125,
+              "customer_id": 0,
+              "shipping_address_attributes": {
+                "address1": "",
+                "address2": "",
+                "city": "",
+                "country": "US",
+                "created_at": "2015-12-16T23:18:41-05:00",
+                "id": 687140,
+                "state": "",
+                "updated_at": "2015-12-16T23:18:41-05:00",
+                "zip": ""
+              },
+              "billing_address_attributes": {
+                "address1": "1500 Sullivan Road",
+                "address2": "",
+                "city": "Aurora",
+                "country": "US",
+                "created_at": "2015-12-16T23:18:41-05:00",
+                "id": 687141,
+                "state": "Alaska",
+                "updated_at": "2015-12-16T23:18:41-05:00",
+                "zip": "60506"
+              },
+              "sub_customers_attributes": [
+                {
+                  "id": 1194979,
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 282869,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516",
+                  "fax": null,
+                  "customer_id": 282869
+                },
+                {
+                  "id": 1194978
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 282869,
+                  "email": "tim@example.com",
+                  "phone": "8473633270",
+                  "fax": null,
+                  "customer_id": 282869
+                }
+              ],
+              "created_at": "2015-12-16T23:18:41-05:00",
+              "updated_at": "2015-12-16T23:18:41-05:00",
+              "url": "https://www.printavo.com/customers/282869",
+              "public_page_url": "https://www.printavo.com/customer/30acce7988bd3de9bb359c5d96f5a3fb"
+            }
+
+### Customer Update [PUT]
+
++ Attributes (Customer)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "first_name": "Test",
+              "last_name": "John Doe",
+              "user_id": 28951,
+              "company": "john Doe company",
+              "default_payment_term_id": 125,
+              "shipping_address_attributes": {
+                "id": 123,
+                "address1": "123 N. Wacker Dr."
+              },
+              "billing_address_attributes": {
+                "id": 140,
+                "address1": "670 N. Wacker Dr."
+              },
+              "sub_customers_attributes": [
+                {
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516",
+                  "fax": null
+                },
+                {
+                  "id": 1194978
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "tim@example.com",
+                  "phone": "8473633270",
+                  "fax": null
+                }
+              ],
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 282869,
+              "first_name": "Test",
+              "last_name": "John Doe",
+              "user_id": 28951,
+              "fax": "",
+              "orders_count": 0,
+              "tax_exempt": true,
+              "tax_resale_num": "",
+              "company": "john Doe company",
+              "customer_email": "",
+              "phone": "8473633270",
+              "extra_notes": "",
+              "default_payment_term_id": 125,
+              "customer_id": 0,
+              "shipping_address_attributes": {
+                "id": 123,
+                "address1": "123 N. Wacker Dr.",
+                "address2": "",
+                "city": "",
+                "country": "US",
+                "created_at": "2015-12-16T22:18:41-06:00",
+                "id": 687140,
+                "state": "",
+                "updated_at": "2015-12-16T22:18:41-06:00",
+                "zip": ""
+              },
+              "billing_address_attributes": {
+                "id": 140,
+                "address1": "670 N. Wacker Dr.",
+                "address2": "",
+                "city": "Aurora",
+                "country": "US",
+                "created_at": "2015-12-16T22:18:41-06:00",
+                "id": 687141,
+                "state": "Alaska",
+                "updated_at": "2015-12-16T22:18:41-06:00",
+                "zip": "60506"
+              },
+              "sub_customers_attributes": [
+                {
+                  "id": 1194979,
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516",
+                  "fax": null,
+                  "customer_id": 282869
+                },
+                {
+                  "id": 1194978
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 284778,
+                  "email": "tim@example.com",
+                  "phone": "8473633270",
+                  "fax": null,
+                  "customer_id": 282869
+                }
+              ],
+              "created_at": "2015-12-16T22:18:41-06:00",
+              "updated_at": "2015-12-28T09:51:28-06:00",
+              "url": "https://www.printavo.com/customers/282869",
+              "public_page_url": "https://www.printavo.com/customer/30acce7988bd3de9bb359c5d96f5a3fb"
+            }
+
+### Customer Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 282869,
+              "first_name": "Test",
+              "last_name": "John Doe",
+              "user_id": 28951,
+              "fax": "",
+              "orders_count": 0,
+              "tax_exempt": true,
+              "tax_resale_num": "",
+              "company": "john Doe company",
+              "customer_email": "",
+              "phone": "8473633270",
+              "extra_notes": "",
+              "default_payment_term_id": 125,
+              "customer_id": 0,
+              "shipping_address_attributes": {
+                "address1": "",
+                "address2": "",
+                "city": "",
+                "country": "US",
+                "created_at": "2015-12-16T22:18:41-06:00",
+                "id": 687140,
+                "state": "",
+                "updated_at": "2015-12-16T22:18:41-06:00",
+                "zip": ""
+              },
+              "billing_address_attributes": {
+                "address1": "1500 Sullivan Road",
+                "address2": "",
+                "city": "Aurora",
+                "country": "US",
+                "created_at": "2015-12-16T22:18:41-06:00",
+                "id": 687141,
+                "state": "Alaska",
+                "updated_at": "2015-12-16T22:18:41-06:00",
+                "zip": "60506"
+              },
+              "sub_customers_attributes": [
+                {
+                  "id": 1194979,
+                  "first_name": "Donny",
+                  "last_name": "Tucker",
+                  "user_id": 282869,
+                  "email": "donn@gmail.com",
+                  "phone": "8473421516",
+                  "fax": null,
+                  "customer_id": 282869
+                },
+                {
+                  "id": 1194978
+                  "first_name": "Max",
+                  "last_name": "Tucker",
+                  "user_id": 282869,
+                  "email": "tim@example.com",
+                  "phone": "8473633270",
+                  "fax": null,
+                  "customer_id": 282869
+                }
+              ],
+              "created_at": "2015-12-16T22:18:41-06:00",
+              "updated_at": "2015-12-28T09:51:28-06:00",
+              "url": "https://www.printavo.com/customers/282869",
+              "public_page_url": "https://www.printavo.com/customer/30acce7988bd3de9bb359c5d96f5a3fb"
+            }
+            
+## Customer Associations [/api/{version}/customers/{id}/orders{?email}{?token}]
+Associations on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `282869`) - Customer id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    
+### Customer's Orders [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 25,
+                "total_count": 118,
+                "total_pages": 5
+              },
+              "data": [
+              {
+                "id": 93654,
+                "sales_tax": "0.0",
+                "total_untaxed": "0.0",
+                "discount_as_percentage": false,
+                "discount": "0.0",
+                "customer_id": 103598,
+                "user_id": 235,
+                "orderstatus_id": 1515,
+                "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+                "production_notes": null,
+                "delivery_method_id": null,
+                "order_nickname": null,
+                "approved": false,
+                "approved_name": null,
+                "visual_id": 4221,
+                "stats": {
+                  "paid": true
+                },
+                "notes": "",
+                "created_at": "2014-07-23T14:15:29Z",
+                "updated_at": "2016-09-16T06:15:42Z",
+                "due_date": "2014-08-15T10:00:00Z",
+                "order_total": "678.0",
+                "customer_due_date": "2014-08-15T10:00:00Z",
+                "invoice_date": "2014-08-15T10:00:00Z",
+                "payment_due_date": "2014-09-15T10:00:00Z",
+                "formatted_invoice_date": "08/15/2014",
+                "formatted_customer_due_date": "08/15/2014",
+                "formatted_payment_due_date": "09/15/2014",
+                "payment_term_id": 125,
+                "expenses": [
+                  {
+                    "id": 271392,
+                    "transaction_date": "2016-09-07T05:00:00Z",
+                    "name": "test",
+                    "amount": "-45.35",
+                    "created_at": "2016-09-07T09:58:32Z",
+                    "updated_at": "2016-09-07T09:58:32Z",
+                    "user_generated": true
+                  }
+                ],
+                "customer": {
+                  "full_name": "Alan Moore",
+                  "first_name": "Alan",
+                  "last_name": "Moore",
+                  "company": "",
+                  "email": "alan@moore.com",
+                  "customer_id": 0
+                },
+                "user": {
+                  "name": "Test Test"
+                },
+                "orderstatus": {
+                  "name": "COMPLETED",
+                  "color": "#000000"
+                },
+                "lineitems_attributes": [
+                  {
+                    "id": 308751,
+                    "style_description": "Names Football",
+                    "taxable": true,
+                    "style_number": "",
+                    "color": "",
+                    "size_other": 31,
+                    "size_yxs": null,
+                    "size_ys": null,
+                    "size_ym": null,
+                    "size_yl": null,
+                    "size_yxl": null,
+                    "size_6m": null,
+                    "size_12m": null,
+                    "size_18m": null,
+                    "size_24m": null,
+                    "size_2t": null,
+                    "size_3t": null,
+                    "size_4t": null,
+                    "size_5t": null,
+                    "size_s": null,
+                    "size_m": null,
+                    "size_l": null,
+                    "size_xl": null,
+                    "size_2xl": null,
+                    "size_3xl": null,
+                    "size_4xl": null,
+                    "size_5xl": null,
+                    "size_6xl": null,
+                    "total_quantities": 31,
+                    "goods_status": "need_ordering",
+                    "images_attributes": [
+                        {
+                          "filepicker_url": "url",
+                          "mime_type": "image/png",
+                          "full_image_url": "url",
+                          "thumbnail_100_by_100_url": "url",
+                          "display_thumbnail": "url"
+                        }
+                      ],
+                    "unit_cost": 12.0,
+                    "category": null
+                  }
+                ],
+                "order_fees": [],
+                "url": "https://printavo.com/invoices/93654",
+                "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+                "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+                "workorder": "https://printavo.com/invoices/93654/workorder",
+                "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+                "custom_created_at": "2014-08-15T10:00:00Z"
+                }
+              ]
+            }
+
+# Group Categories
+
+## Categories collection [/api/{version}/categories{?email}{?token}{?page}{?per_page}]
+Actions on the Categories resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of categories per page.
+        + Default: `20`
+
+### Categories Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 26,
+                "total_pages": 2
+              },
+              "data": [
+                {
+                  "id": 11907,
+                  "name": "Test"
+                }
+              ]
+            }
+
+# Group Products
+
+## Products collection [/api/{version}/products{?email}{?token}{?page}{?per_page}]
+Actions on the Products resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of products per page.
+        + Default: `20`
+
+### Product Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 2,
+                "total_pages": 1
+              },
+              "data": [
+                {
+                  "id": 84033,
+                  "price_per": "1.0",
+                  "style_number": "test",
+                  "brand": "test",
+                  "size": null,
+                  "created_at": "2015-01-19T11:00:37-06:00",
+                  "updated_at": "2015-01-19T11:00:37-06:00"
+                }
+              ]
+            }
+
+### Product Create [POST]
+
++ Attributes (Product)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "brand": "test brand",
+              "style_number": "BB400",
+              "style_description": "Cotton",
+              "color": "Red",
+              "size": "XS",
+              "price_per": "8.25"
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 2405026,
+              "price_per": "8.25",
+              "style_number": "BB400",
+              "brand": "test brand",
+              "size": "XS",
+              "created_at": "2015-12-28T09:46:10-06:00",
+              "updated_at": "2015-12-28T09:46:10-06:00"
+            }
+
+## Product [/api/{version}/products/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `84033`) - Product id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Product Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 84033,
+              "price_per": "1.0",
+              "style_number": "test",
+              "brand": "test",
+              "size": null,
+              "created_at": "2015-01-19T11:00:37-06:00",
+              "updated_at": "2015-01-19T11:00:37-06:00"
+            }
+
+### Product Update [PUT]
+
++ Attributes (Product)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "brand": "John Doe brand",
+              "style_number": "ACC123",
+              "size": "M",
+              "price_per": "6.25"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 84033,
+              "price_per": "6.25",
+              "style_number": "ACC123",
+              "brand": "John Doe brand",
+              "size": "M",
+              "created_at": "2015-01-19T12:00:37-05:00",
+              "updated_at": "2015-12-28T10:49:05-05:00"
+            }
+
+### Product Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 84033,
+              "price_per": "6.25",
+              "style_number": "ACC123",
+              "brand": "John Doe brand",
+              "size": "M",
+              "created_at": "2015-01-19T12:00:37-05:00",
+              "updated_at": "2015-12-28T10:49:05-05:00"
+            }
+
+# Group Orders
+
+## Orders collection [/api/{version}/orders{?email}{?token}{?page}{?per_page}{?sort_column}{?direction}{?in_production_after}{?in_production_before}]
+Actions on the Orders resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of orders per page.
+        + Default: `25`
+    + sort_column (optional, string) - Column to sort on
+        + Default: `id`
+    + direction (optional, string) - Direction to sort
+        + Default: `desc`
+    + in_production_after (optional, string) - DateTime to filter on Orders with a due date after the specified DateTime. Format: ISO8601
+    + in_production_before (optional, string) - DateTime to filter on Orders with a due date before the specified DateTime. Format: ISO8601
+      
+
+### Orders Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 25,
+                "total_count": 118,
+                "total_pages": 5
+              },
+              "data": [
+              {
+                "id": 93654,
+                "sales_tax": "0.0",
+                "total_untaxed": "0.0",
+                "discount_as_percentage": false,
+                "discount": "0.0",
+                "customer_id": 103598,
+                "user_id": 235,
+                "orderstatus_id": 1515,
+                "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+                "production_notes": null,
+                "order_nickname": null,
+                "approved": false,
+                "approved_name": null,
+                "visual_id": 4221,
+                "stats": {
+                  "paid": true
+                },
+                "notes": "",
+                "created_at": "2014-07-23T14:15:29Z",
+                "updated_at": "2016-09-16T06:15:42Z",
+                "due_date": "2014-08-15T10:00:00Z",
+                "order_total": "678.0",
+                "customer_due_date": "2014-08-15T10:00:00Z",
+                "invoice_date": "2014-08-15T10:00:00Z",
+                "payment_due_date": "2014-09-15T10:00:00Z",
+                "custom_created_at": "2014-08-15T10:00:00Z",
+                "formatted_custom_created_at_date": "08/15/2014",
+                "formatted_invoice_date": "08/15/2014",
+                "formatted_customer_due_date": "08/15/2014",
+                "formatted_payment_due_date": "09/15/2014",
+                "payment_term_id": 125,
+                "delivery_method_id": 213,
+                "expenses": [
+                  {
+                    "id": 271392,
+                    "transaction_date": "2016-09-07T05:00:00Z",
+                    "name": "test",
+                    "amount": "-45.35",
+                    "created_at": "2016-09-07T09:58:32Z",
+                    "updated_at": "2016-09-07T09:58:32Z",
+                    "user_generated": true
+                  }
+                ],
+                "customer": {
+                  "full_name": "Alan Moore",
+                  "first_name": "Alan",
+                  "last_name": "Moore",
+                  "company": "",
+                  "email": "alan@moore.com"
+                },
+                "user": {
+                  "name": "Test Test"
+                },
+                "orderstatus": {
+                  "name": "COMPLETED",
+                  "color": "#000000"
+                },
+                "lineitems_attributes": [
+                  {
+                    "id": 308751,
+                    "style_description": "Names Football",
+                    "taxable": true,
+                    "style_number": "",
+                    "color": "",
+                    "size_other": 31,
+                    "size_yxs": null,
+                    "size_ys": null,
+                    "size_ym": null,
+                    "size_yl": null,
+                    "size_yxl": null,
+                    "size_6m": null,
+                    "size_12m": null,
+                    "size_18m": null,
+                    "size_24m": null,
+                    "size_2t": null,
+                    "size_3t": null,
+                    "size_4t": null,
+                    "size_5t": null,
+                    "size_s": null,
+                    "size_m": null,
+                    "size_l": null,
+                    "size_xl": null,
+                    "size_2xl": null,
+                    "size_3xl": null,
+                    "size_4xl": null,
+                    "size_5xl": null,
+                    "size_6xl": null,
+                    "total_quantities": 31,
+                    "goods_status": "need_ordering",
+                    "unit_cost": 12.0,
+                    "category": null
+                  }
+                ],
+                "order_fees": [],
+                "url": "https://printavo.com/invoices/93654",
+                "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+                "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+                "workorder": "https://printavo.com/invoices/93654/workorder",
+                "packaging_slip": "https://printavo.com/invoices/93654/packing_slip"
+                }
+              ]
+            }
+
+### Order Create [POST]
+
++ Attributes (Order)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "user_id": 2658,
+              "customer_id": 8782,
+              "orderstatus_id": 1547,
+              
+              // Either formatted_due_date or due_date is required
+              // If you send both, formatted_due_date will be ignored
+              // due_date is ISO 8601 format and allows you to set a specific time
+              "due_date": "2014-11-11T10:00:00-05:00",
+              "formatted_due_date": "11/11/2014",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_customer_due_date": "11/11/2014",
+              "formatted_invoice_date": "11/11/2014",
+              "formatted_payment_due_date": "12/11/2014",
+              "sales_tax": "55.5",
+              "discount": "1.5",
+              "lineitems_attributes": [{
+                "style_description": "Shirt",
+                "category_id": 878,
+                "unit_cost": 5.5,
+                "print_locations_attributes": [{
+                  "details": ""
+                }],
+                "images_attributes": [{
+                  "file_url": "https://www.filepicker.io/api/file/bkUidBB7oAidQCO4RQPy",
+                  "mime_type": "image/png"
+              }]
+              }],
+              "production_notes_files_attributes": [{
+                "file_url": "https://www.filepicker.io/api/file/dBBbO4oAkUi7QCidRQPy",
+                "name": "file.png",
+                "mime_type": "image/png"
+              }],
+              "payment_term_id": 125,
+              "delivery_method_id": 213
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93655,
+              "sales_tax": "55.5",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "1.5",
+              "customer_id": 8782,
+              "user_id": 2658,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "custom_created_at": "2014-08-15T10:00:00Z",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_customer_due_date": "11/11/2014",
+              "formatted_invoice_date": "11/11/2014",
+              "formatted_payment_due_date": "12/11/2014",
+              "payment_term_id": 125,
+              "delivery_method_id": 213,
+              "expenses": [],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [],
+              "tasks": [],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Shirt",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "print_locations_attributes": [{
+                    "details": ""
+                  }],
+                  "images_attributes": [{
+                    "filepicker_url": "url",
+                    "mime_type": "image/png",
+                    "full_image_url": "url",
+                    "thumbnail_100_by_100_url": "url",
+                    "display_thumbnail": "url"
+                  }],
+                  "unit_cost": 5.5,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "production_notes_files_attributes": [{
+                "id": 1,
+                "filepicker_url": "https://www.filepicker.io/api/file/dBBbO4oAkUi7QCidRQPy",
+                "name": "file.png",
+                "mime_type": "image/png",
+                "created_at": "2017-08-04T14:54:06.501-07:00"
+              }]
+            }
+
+### Orders Search [GET /api/{version}/orders/search{?email}{?token}{?page}{?per_page}{?query}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of orders per page.
+        + Default: `25`
+    + query (required, string) - String to search
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 25,
+                "total_count": 118,
+                "total_pages": 5
+              },
+              "data": [
+                {
+                  "id": 93654,
+                  "sales_tax": "0.0",
+                  "total_untaxed": "0.0",
+                  "discount_as_percentage": false,
+                  "discount": "0.0",
+                  "customer_id": 103598,
+                  "user_id": 235,
+                  "orderstatus_id": 1515,
+                  "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+                  "production_notes": null,
+                  "order_nickname": null,
+                  "approved": false,
+                  "approved_name": null,
+                  "visual_id": 4221,
+                  "invoice_date": "2014-08-15T10:00:00Z",
+                  "payment_due_date": "2014-09-15T10:00:00Z",
+                  "formatted_invoice_date": "08/15/2014",
+                  "formatted_customer_due_date": "08/15/2014",
+                  "formatted_payment_due_date": "09/15/2014",
+                  "stats": {
+                    "paid": true
+                  },
+                  "notes": "",
+                  "created_at": "2014-07-23T14:15:29Z",
+                  "updated_at": "2016-09-16T06:15:42Z",
+                  "due_date": "2014-08-15T10:00:00Z",
+                  "order_total": "678.0",
+                  "customer_due_date": "2014-08-15T10:00:00Z",
+                  "payment_term_id": 125,
+                  "delivery_method_id": 213,
+                  "expenses": [
+                    {
+                      "id": 271392,
+                      "transaction_date": "2016-09-07T05:00:00Z",
+                      "name": "test",
+                      "amount": "-45.35",
+                      "created_at": "2016-09-07T09:58:32Z",
+                      "updated_at": "2016-09-07T09:58:32Z",
+                      "user_generated": true
+                    }
+                  ],
+                  "customer": {
+                    "full_name": "Alan Moore",
+                    "first_name": "Alan",
+                    "last_name": "Moore",
+                    "company": "",
+                    "email": "alan@moore.com"
+                  },
+                  "user": {
+                    "name": "Test Test"
+                  },
+                  "orderstatus": {
+                    "name": "COMPLETED",
+                    "color": "#000000"
+                  },
+                  "lineitems_attributes": [
+                    {
+                      "id": 308751,
+                      "style_description": "Names Football",
+                      "taxable": true,
+                      "style_number": "",
+                      "color": "",
+                      "size_other": 31,
+                      "size_yxs": null,
+                      "size_ys": null,
+                      "size_ym": null,
+                      "size_yl": null,
+                      "size_yxl": null,
+                      "size_6m": null,
+                      "size_12m": null,
+                      "size_18m": null,
+                      "size_24m": null,
+                      "size_2t": null,
+                      "size_3t": null,
+                      "size_4t": null,
+                      "size_5t": null,
+                      "size_s": null,
+                      "size_m": null,
+                      "size_l": null,
+                      "size_xl": null,
+                      "size_2xl": null,
+                      "size_3xl": null,
+                      "size_4xl": null,
+                      "size_5xl": null,
+                      "size_6xl": null,
+                      "total_quantities": 31,
+                      "goods_status": "need_ordering",
+                      "print_locations_attributes": [],
+                      "unit_cost": 12.0,
+                      "category": null
+                    }
+                  ],
+                  "order_fees": [],
+                  "url": "https://printavo.com/invoices/93654",
+                  "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+                  "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+                  "workorder": "https://printavo.com/invoices/93654/workorder",
+                  "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+                  "custom_created_at": "2014-08-15T10:00:00Z"
+                }
+              ]
+            }
+
+## Order [/api/{version}/orders/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `93654`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Order Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "approved_name": null,
+              "visual_id": 4221,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "custom_created_at": "2014-08-15T10:00:00Z",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "delivery_method_id": null,
+              "payment_term_id": 125,
+              "delivery_method_id": 213,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "formatted_delivery_status": "sent"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "print_locations_attributes": [],
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip"
+            }
+
+### Order Update [PUT]
+
++ Attributes (Order)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "user_id": 2658,
+              "customer_id": 8782,
+              "orderstatus_id": 1547,
+              
+              // Either formatted_due_date or due_date is required
+              // If you send both, formatted_due_date will be ignored
+              // due_date is ISO 8601 format and allows you to set a specific time
+              "formatted_due_date": "11/11/2014",
+              "due_date": "2014-11-11T10:00:00-05:00",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_customer_due_date": "11/11/2015",
+              "formatted_invoice_date": "11/11/2015",
+              "formatted_payment_due_date": "12/11/2015",
+              "sales_tax": "44.4",
+              "order_nickname": "Test Nickname",
+              "lineitems_attributes": [{
+                "style_description": "Shirt",
+                "category_id": 878,
+                "unit_cost": 5.5,
+                "size_xs": 1,
+                "print_locations_attributes": [{
+                    "details": ""
+                }
+              },
+              {
+                "style_description": "Shirt 2",
+                "category_id": 90,
+                "unit_cost": 6.0,
+                "size_m": 5
+              }],
+              "order_fees_attributes": [{
+                "amount": 10.0,
+                "description": "Shipping Fee",
+                "taxable": true
+              }],
+              "custom_created_at": "2014-08-15T10:00:00Z",
+              "delivery_method_id": 213
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2015-11-11T10:00:00Z",
+              "invoice_date": "2015-11-11T10:00:00Z",
+              "payment_due_date": "2015-12-11T10:00:00Z",
+              "custom_created_at": "2014-08-15T10:00:00Z",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_customer_due_date": "11/11/2015",
+              "formatted_invoice_date": "11/11/2015",
+              "formatted_payment_due_date": "12/11/2015",
+              "payment_term_id": 125,
+              "delivery_method_id": 213,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "print_locations_attributes": [{
+                    "details": ""
+                  },
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip"
+            }
+
+### Order Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "custom_created_at": "2014-08-15T10:00:00Z",
+              "formatted_custom_created_at_date": "08/15/2014",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "delivery_method_id": 213,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": ""
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip"
+            }
+
+### Approve [PUT /api/{version}/orders/{id}/approve{?email}{?token}{?approved_name}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + approved_name (required, string, `Bruce`) - Approver signature
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": true,
+              "approved_name": "Bruce",
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "delivery_method_id": null,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+            
+### Unapprove [GET /api/{version}/orders/{id}/unapprove{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "delivery_method_id": null,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+### Duplicate [GET /api/{version}/orders/{id}/duplicate_order{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "delivery_method_id": null,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+### Mark All Lineitems As Need Ordering [GET /api/{version}/orders/{id}/mark_all_lineitems_as_need_ordering{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "delivery_method_id": null,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+### Update Order Status [PUT /api/{version}/orders/{id}/update_orderstatus{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+
++ Attributes (object)
+  + orderstatus_id (required, number)
+
++ Request (application/json)
+
+    + Body
+
+            {
+              "orderstatus_id": 1
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "delivery_method_id": null,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+### Email Invoice [POST /api/{version}/orders/{id}/email_invoice{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Attributes (EmailInvoice)
+
++ Request (application/json)
+
+    + Body
+
+            {
+              "order": {
+                "email_to": "bla@bla.com",
+                "cc_invoice_creator": true,
+                "account": {
+                  "invoice_template_subject_line": "okirgnkio",
+                  "invoice_template": "kjnerw"
+                }
+              }
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "formatted_customer_due_date": "08/15/2014",
+              "formatted_invoice_date": "08/15/2014",
+              "formatted_payment_due_date": "09/15/2014",
+              "payment_term_id": 125,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+### Add Payment [POST /api/{version}/orders/{id}/add_payment{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Attributes (BookPayment)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "book": {
+                "amount": 100,
+                "formatted_transaction_date": "10/10/2014",
+                "name": "bla",
+                "user_generated": true
+              }
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+
+            {
+              "id": 271398,
+              "details": {},
+              "order_id": 93654,
+              "transaction_date": "2014-10-09T22:00:00Z",
+              "name": "bla",
+              "amount": "100.0",
+              "created_at": "2016-09-16T06:15:41Z",
+              "updated_at": "2016-09-16T06:15:41Z"
+            }
+
+### Request Payment [POST /api/{version}/orders/{id}/request_payment{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - Invoice id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Attributes (BookPaymentRequest)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "payment_request": {
+                "cc_boolean": true,
+                "cc_recipients": "example@example.com, example2@example.com",
+                "send_email": true,
+                "amount": 123,
+                "account": {
+                  "payment_request_template": "some text"
+                }
+              }
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 93654,
+              "sales_tax": "0.0",
+              "total_untaxed": "0.0",
+              "discount_as_percentage": false,
+              "discount": "0.0",
+              "customer_id": 103598,
+              "user_id": 235,
+              "orderstatus_id": 1515,
+              "public_hash": "fa7cdf959797229fc3e6fc8e4c5232bf",
+              "production_notes": null,
+              "order_nickname": null,
+              "approved": false,
+              "approved_name": null,
+              "visual_id": 4221,
+              "order_subtotal": 10.0,
+              "amount_paid": 8.0,
+              "amount_outstanding": 2.0,
+              "stats": {
+                "paid": true
+              },
+              "notes": "",
+              "created_at": "2014-07-23T14:15:29Z",
+              "updated_at": "2016-09-16T06:15:42Z",
+              "due_date": "2014-08-15T10:00:00Z",
+              "order_total": "678.0",
+              "customer_due_date": "2014-08-15T10:00:00Z",
+              "invoice_date": "2014-08-15T10:00:00Z",
+              "payment_due_date": "2014-09-15T10:00:00Z",
+              "payment_term_id": 125,
+              "expenses": [
+                {
+                  "id": 271392,
+                  "transaction_date": "2016-09-07T05:00:00Z",
+                  "name": "test",
+                  "amount": "-45.35",
+                  "created_at": "2016-09-07T09:58:32Z",
+                  "updated_at": "2016-09-07T09:58:32Z",
+                  "user_generated": true
+                }
+              ],
+              "customer": {
+                "full_name": "Alan Moore",
+                "first_name": "Alan",
+                "last_name": "Moore",
+                "company": "",
+                "email": "alan@moore.com"
+              },
+              "messages": [
+                {
+                  "from": "2.61e6193093f8f5de09e5cf0b849296c3.order.fa7cdf959797229fc3e6fc8e4c5232bf@messages.printavo.com",
+                  "to": "example@example.com",
+                  "subject": "test",
+                  "text": "test",
+                  "state": "linked"
+                }
+              ],
+              "tasks": [
+                {
+                  "id": 83180,
+                  "order_id": 93654,
+                  "task_name": "Completed task",
+                  "due_date": "2016-09-08T05:00:00Z",
+                  "completed": true,
+                  "completed_date": null,
+                  "created_at": "2016-09-07T10:28:51Z",
+                  "updated_at": "2016-09-07T10:29:40Z",
+                  "preset_task_created": false,
+                  "assigned_to": "Test Test",
+                  "completed_by": null
+                }
+              ],
+              "user": {
+                "name": "Test Test"
+              },
+              "orderstatus": {
+                "name": "COMPLETED",
+                "color": "#000000"
+              },
+              "lineitems_attributes": [
+                {
+                  "id": 308751,
+                  "style_description": "Names Football",
+                  "taxable": true,
+                  "style_number": "",
+                  "color": "",
+                  "size_other": 31,
+                  "size_yxs": null,
+                  "size_ys": null,
+                  "size_ym": null,
+                  "size_yl": null,
+                  "size_yxl": null,
+                  "size_6m": null,
+                  "size_12m": null,
+                  "size_18m": null,
+                  "size_24m": null,
+                  "size_2t": null,
+                  "size_3t": null,
+                  "size_4t": null,
+                  "size_5t": null,
+                  "size_s": null,
+                  "size_m": null,
+                  "size_l": null,
+                  "size_xl": null,
+                  "size_2xl": null,
+                  "size_3xl": null,
+                  "size_4xl": null,
+                  "size_5xl": null,
+                  "size_6xl": null,
+                  "total_quantities": 31,
+                  "goods_status": "need_ordering",
+                  "images_attributes": [
+                    {
+                      "filepicker_url": "url",
+                      "mime_type": "image/png",
+                      "full_image_url": "url",
+                      "thumbnail_100_by_100_url": "url",
+                      "display_thumbnail": "url"
+                    }
+                  ],
+                  "unit_cost": 12.0,
+                  "category": null
+                }
+              ],
+              "order_fees": [],
+              "url": "https://printavo.com/invoices/93654",
+              "public_url": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf",
+              "pdf": "https://printavo.com/invoice/fa7cdf959797229fc3e6fc8e4c5232bf.pdf",
+              "workorder": "https://printavo.com/invoices/93654/workorder",
+              "packaging_slip": "https://printavo.com/invoices/93654/packing_slip",
+              "custom_created_at": "2014-08-15T10:00:00Z"
+            }
+
+# Group Inquiries
+
+## Inquiries collection [/api/{version}/inquiries{?email}{?token}{?page}{?per_page}]
+Actions on the Inquiries resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of inquiries per page.
+        + Default: `20`
+
+### Inquiries Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 38,
+                "total_pages": 2
+              },
+              "data": [
+                {
+                  "id": 2252,
+                  "description": "1",
+                  "customer_name": "omwylloe",
+                  "customer_email": "sample@email.tst",
+                  "customer_phone": "555-666-0606",
+                  "read": false,
+                  "created_at": "2015-05-22T04:02:07-05:00",
+                  "updated_at": "2015-05-22T04:02:07-05:00"
+                }
+              ]
+            }
+
+### Inquiries Create [POST]
+
++ Attributes (Inquirie)
+    + customer_name (required, string)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "customer_name": "Test customer",
+              "description": "This is a test for a customer"
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 3772,
+              "description": "This is a test for a customer",
+              "customer_name": "Test customer",
+              "customer_email": null,
+              "customer_phone": null,
+              "read": false,
+              "created_at": "2015-12-22T19:19:23Z",
+              "updated_at": "2015-12-22T19:19:23Z"
+            }
+
+## Inquirie [/api/{version}/inquiries/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `2252`) - Inquiry id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Inquiries Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 2252,
+              "description": "1",
+              "customer_name": "omwylloe",
+              "customer_email": "sample@email.tst",
+              "customer_phone": "555-666-0606",
+              "read": false,
+              "created_at": "2015-05-22T04:02:07-05:00",
+              "updated_at": "2015-05-22T04:02:07-05:00"
+            }
+
+### Inquiries Update [PUT]
+
++ Attributes (Inquirie)
+    + customer_name (optional, string)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "customer_phone": "123",
+              "customer_email": "customer@email.com"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 2252,
+              "description": "1",
+              "customer_name": "omwylloe",
+              "customer_email": "customer@email.com",
+              "customer_phone": "123",
+              "read": false,
+              "created_at": "2015-05-22T05:02:07-04:00",
+              "updated_at": "2015-12-28T11:33:07-05:00"
+            }
+
+### Inquiries Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 2252,
+              "description": "1",
+              "customer_name": "omwylloe",
+              "customer_email": "customer@email.com",
+              "customer_phone": "123",
+              "read": false,
+              "created_at": "2015-05-22T05:02:07-04:00",
+              "updated_at": "2015-12-28T11:33:07-05:00"
+            }
+
+# Group Preset Task Groups
+Properties
+
+| Name | Type | Description |
+|:-----|:-----|:------------|
+| title |  String | Description/Name of the Preset Task Group |
+| preset_tasks_attributes |  Array  | Preset Tasks |
+| preset_tasks_attributes[id] | Integer | The id of the Preset Task to update |
+| preset_tasks_attributes[task_name] |  String | Description/Name of the Preset Task |
+| preset_tasks_attributes[assigned_user_id] |  Integer | Assign this Preset Task to a User via a user_id |
+| preset_tasks_attributes[position] |  Integer | Position of the Preset Task |
+| preset_tasks_attributes[_destroy] |  Boolean  | Destroy this Task |
+
+  
+    
+## Preset Task Groups collection [/api/{version}/preset_task_groups{?email}{?token}{?page}{?per_page}]
+Actions on the Preset Task Groups resource
+      
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, integer) - Number of page.
+        + Default: `1`
+    + per_page (optional, integer) - Number of order statuses per page.
+        + Default: `25`
+
+### Preset Task Groups Index [GET]
+
++ Response 200 (application/json)
+
+
+    + Body
+
+            [
+                {
+                    "id": 16869,
+                    "title": "Group title",
+                    "created_at": "2020-10-21T12:30:33.952-05:00",
+                    "updated_at": "2020-12-09T11:48:25.015-06:00",
+                    "preset_tasks_attributes": [
+                        {
+                            "id": 212121,
+                            "task_name": "do it",
+                            "assigned_user_id": 10101,
+                            "assigned_to_user": "John Doe",
+                            "position": 1,
+                            "created_at": "2020-10-21T12:31:46.195-05:00",
+                            "updated_at": "2020-12-07T15:58:36.817-06:00"
+                        },
+                        {
+                            "id": 212121,
+                            "task_name": "check it",
+                            "assigned_user_id": null,
+                            "assigned_to_user": null,
+                            "position": 2,
+                            "created_at": "2020-12-08T11:02:06.470-06:00",
+                            "updated_at": "2020-12-08T11:02:06.470-06:00"
+                        }
+                    ]
+                }
+            ]
+
+### Preset Task Groups Create [POST]
+
++ Request (application/json)
+
+    + Body
+
+             {
+                "title": "Group title",
+                "preset_tasks_attributes": [
+                    {
+                        "task_name": "do it",
+                        "assigned_user_id": 10101,
+                        "position": 1
+                    },
+                    {
+                        "task_name": "check it",
+                        "position": 2
+                    }
+                ]
+            }
+
++ Response 201 (application/json)
+
+
+    + Body
+
+            {
+                "id": 16869,
+                "title": "Group title",
+                "created_at": "2020-10-21T12:30:33.952-05:00",
+                "updated_at": "2020-12-09T11:48:25.015-06:00",
+                "preset_tasks_attributes": [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 10101,
+                        "assigned_to_user": "John Doe",
+                        "position": 1,
+                        "created_at": "2020-10-21T12:31:46.195-05:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    },
+                    {
+                        "id": 4044223,
+                        "task_name": "check it",
+                        "assigned_user_id": null,
+                        "assigned_to_user": null,
+                        "position": 2,
+                        "created_at": "2020-12-08T11:02:06.470-06:00",
+                        "updated_at": "2020-12-08T11:02:06.470-06:00"
+                    }
+                ]
+            }      
+      
+
+## Preset Task Groups single [/api/{version}/preset_task_groups/{id}{?email}{?token}]
+Actions on the :id resource
+      
++ Parameters
+        
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + id (required, Integer, ``) ... The id of the Preset Task Group
+        
+      
+      
+### Preset Task Groups Show [GET]
+
++ Response 200 (application/json)
+
+
+    + Body
+
+            {
+                "id": 16869,
+                "title": "Group title",
+                "created_at": "2020-10-21T12:30:33.952-05:00",
+                "updated_at": "2020-12-09T11:48:25.015-06:00",
+                "preset_tasks_attributes": [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 10101,
+                        "assigned_to_user": "John Doe",
+                        "position": 1,
+                        "created_at": "2020-10-21T12:31:46.195-05:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    },
+                    {
+                        "id": 4044223,
+                        "task_name": "check it",
+                        "assigned_user_id": null,
+                        "assigned_to_user": null,
+                        "position": 2,
+                        "created_at": "2020-12-08T11:02:06.470-06:00",
+                        "updated_at": "2020-12-08T11:02:06.470-06:00"
+                    }
+                ]
+            }    
+
+
+            
+### Preset Task Groups Update [PUT]
+
++ Request (application/json)
+
+    + Body
+
+             {
+                "title": "Group title",
+                "preset_tasks_attributes": [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 212121,
+                        "position": 1
+                    },
+                    {
+                        "id": 4044223
+                        "_destroy": true
+                    },
+                    {
+                        "task_name": "redo it",
+                        "position": 2
+                    },
+                ]
+            }
+
++ Response 200 (application/json)
+
+
+    + Body
+
+            {
+                "id": 16869,
+                "title": "Group title",
+                "created_at": "2020-10-21T12:30:33.952-05:00",
+                "updated_at": "2020-12-09T11:48:25.015-06:00",
+                "preset_tasks_attributes": [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 212121,
+                        "assigned_to_user": "Jane Doe",
+                        "position": 1,
+                        "created_at": "2020-10-21T12:31:46.195-05:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    },
+                    {
+                        "id": 5435432,
+                        "task_name": "redo it",
+                        "assigned_user_id": 0,
+                        "assigned_to_user": null,
+                        "position": 2,
+                        "created_at": "2020-12-07T15:58:36.817-06:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    }
+                ]
+            }    
+      
+### Preset Task Group Delete [DELETE]
+
++ Response 200 (application/json)
+
+
+    + Body
+
+            {
+                "id": 16869,
+                "title": "Group title",
+                "created_at": "2020-10-21T12:30:33.952-05:00",
+                "updated_at": "2020-12-09T11:48:25.015-06:00",
+                "preset_tasks_attributes": [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 10101,
+                        "assigned_to_user": "John Doe",
+                        "position": 1,
+                        "created_at": "2020-10-21T12:31:46.195-05:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    },
+                    {
+                        "id": 4044223,
+                        "task_name": "check it",
+                        "assigned_user_id": null,
+                        "assigned_to_user": null,
+                        "position": 2,
+                        "created_at": "2020-12-08T11:02:06.470-06:00",
+                        "updated_at": "2020-12-08T11:02:06.470-06:00"
+                    }
+                ]
+            }    
+      
+    
+## Apply Preset Task Group single [/api/{version}/preset_task_groups/{id}/apply/{order_id}{?email}{?token}]
+Actions on the :id resource against the :order_id resource
+      
++ Parameters
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+    + id (required, Integer, ``) ... The id of the Preset Task Group
+    + order_id (required, Integer, ``) ... The Order id to apply the Preset Task Group too
+        
+      
+      
+### Preset Task Groups Apply [POST]
+
++ Request (application/json)
+
++ Response 200 (application/json)
+
+
+    + Body
+
+              [
+                    {
+                        "id": 4044197,
+                        "task_name": "do it",
+                        "assigned_user_id": 10101,
+                        "assigned_to_user": "John Doe",
+                        "position": 1,
+                        "created_at": "2020-10-21T12:31:46.195-05:00",
+                        "updated_at": "2020-12-07T15:58:36.817-06:00"
+                    },
+                    {
+                        "id": 4044223,
+                        "task_name": "check it",
+                        "assigned_user_id": null,
+                        "assigned_to_user": null,
+                        "position": 2,
+                        "created_at": "2020-12-08T11:02:06.470-06:00",
+                        "updated_at": "2020-12-08T11:02:06.470-06:00"
+                    }
+                ]
+
+# Group Tasks
+
+## Tasks collection [/api/{version}/tasks{?email}{?token}{?page}{?per_page}{?completed}{?assigned_user_id}{?included_orderstatus_ids}{?taskable_type}{?taskable_id}{?due_after}{?due_before}]
+Actions on the Tasks resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, integer) - Number of page.
+        + Default: `1`
+    + per_page (optional, integer) - Number of tasks per page.
+        + Default: `25`
+    + completed (optional, boolean) - Filter on task's completed flag.
+    + assigned_user_id (optional, integer) - Filter on task's assigned user.
+    + included_orderstatus_ids (optional, string) - Comma-separated list of ids used to filter on tasks that have these order statuses. taskable_type, if provided, can only be 'order' when using this parameter
+    + taskable_type (optional, string) - Filter on tasks for orders, customers, or tasks not assigned to either. Valid values are 'order', 'customer', 'none'
+    + taskable_id (optional, integer) - Filter on tasks for orders or customers where the taskable id is the id of the order or customer.  taskable type is required when using this parameter
+    + due_after (optional, string) - DateTime to filter Tasks with a due date after specified DateTime. Format: ISO8601
+    + due_before (optional, string) - DateTime to filter Tasks with a due date before specified DateTime. Format: ISO8601
+
+
+### Tasks Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 25,
+                "total_pages": 2
+              },
+              "data": [
+                {
+                  "id": 42683,
+                  "task_name": "Order more ink for this job",
+                  "due_date": "2015-10-13T01:00:00-04:00",
+                  "completed_date": null,
+                  "created_at": "2015-10-13T15:03:38-04:00",
+                  "updated_at": "2015-10-13T15:03:38-04:00"
+                }
+              ]
+            }
+
+### Tasks Create [POST]
+
++ Attributes (Task)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "formatted_due_date": "11/11/2014",
+              "task_name": "testing task",
+              "taskable_type": "Order",
+              "taskable_id": 123
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 55891,
+              "task_name": "testing task",
+              "due_date": "2014-11-11T00:00:00-05:00",
+              "completed_date": null,
+              "taskable_type": "Order",
+              "taskable_id": 123,
+              "created_at": "2015-12-28T11:35:42-05:00",
+              "updated_at": "2015-12-28T11:35:42-05:00"
+            }
+
+## Task [/api/{version}/tasks/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `42683`) - Task id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Tasks Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 42683,
+              "task_name": "Order more ink for this job",
+              "due_date": "2015-10-13T01:00:00-04:00",
+              "completed_date": null,
+              "created_at": "2015-10-13T15:03:38-04:00",
+              "updated_at": "2015-10-13T15:03:38-04:00"
+            }
+
+### Tasks Update [PUT]
+
++ Attributes (Task)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "formatted_due_date": "11/11/2014",
+              "task_name": "update task name"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 42683,
+              "task_name": "update task name",
+              "due_date": "2014-11-11T00:00:00-06:00",
+              "completed_date": null,
+              "created_at": "2015-10-13T14:03:38-05:00",
+              "updated_at": "2015-12-28T10:38:54-06:00"
+            }
+
+### Tasks Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 42683,
+              "task_name": "update task name",
+              "due_date": "2014-11-11T00:00:00-06:00",
+              "completed_date": null,
+              "created_at": "2015-10-13T14:03:38-05:00",
+              "updated_at": "2015-12-28T10:38:54-06:00"
+            }
+
+# Group Expenses
+
+## Expenses collection [/api/{version}/expenses{?email}{?token}{?page}{?per_page}]
+Actions on the Expenses resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of expenses per page.
+        + Default: `20`
+
+### Expenses Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 22,
+                "total_pages": 1
+              },
+              "data": [
+                {
+                  "id": 85089,
+                  "details": {},
+                  "order_id": null,
+                  "transaction_date": "2014-08-07T19:00:00-05:00",
+                  "name": "Zapier Trigger test",
+                  "amount": "-1.0",
+                  "created_at": "2014-12-02T14:10:43-06:00",
+                  "updated_at": "2014-12-02T14:10:43-06:00"
+                }
+              ]
+            }
+
+### Expense Create [POST]
+
++ Attributes (Expense)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "amount": "2.5",
+              "name": "expense test",
+              "transaction_date": "11/11/2014"
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 221149,
+              "details": {},
+              "order_id": null,
+              "transaction_date": "2014-11-11T00:00:00-05:00",
+              "name": "expense test",
+              "amount": "-2.5",
+              "created_at": "2015-12-28T11:41:27-05:00",
+              "updated_at": "2015-12-28T11:41:27-05:00"
+            }
+
+## Expense [/api/{version}/expenses/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `27183`) - Expense id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Expense Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 27183,
+              "details": {},
+              "order_id": 46285,
+              "transaction_date": "2014-02-01T21:20:54-06:00",
+              "name": "Bruce Tucker / 25 items",
+              "amount": "0.0",
+              "created_at": "2014-02-01T21:20:54-06:00",
+              "updated_at": "2014-02-01T21:20:54-06:00"
+            }
+
+### Expense Update [PUT]
+
++ Attributes (Expenseupdate)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "amount": "5.5",
+              "name": "update expense test",
+              "transaction_date": "11/11/2014"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 27183,
+              "details": {},
+              "order_id": 46285,
+              "transaction_date": "2014-11-11T00:00:00-05:00",
+              "name": "update expense test",
+              "amount": "-5.5",
+              "created_at": "2014-02-01T22:20:54-05:00",
+              "updated_at": "2015-12-28T11:48:38-05:00"
+            }
+
+### Expense Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 27183,
+              "details": {},
+              "order_id": 46285,
+              "transaction_date": "2014-11-11T00:00:00-05:00",
+              "name": "update expense test",
+              "amount": "-5.5",
+              "created_at": "2014-02-01T22:20:54-05:00",
+              "updated_at": "2015-12-28T11:48:38-05:00"
+            }
+
+# Group Payments
+
+## Payments collection [/api/{version}/payments{?email}{?token}{?page}{?per_page}]
+Actions on the Payments resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of payments per page.
+        + Default: `20`
+
+### Payments Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 39,
+                "total_pages": 2
+              },
+              "data": [
+                {
+                  "id": 202049,
+                  "details": {},
+                  "order_id": 303258,
+                  "transaction_date": "2015-11-13T00:00:00-06:00",
+                  "name": "Payment for order #1078",
+                  "amount": "139.69",
+                  "created_at": "2015-11-13T20:57:41-06:00",
+                  "updated_at": "2015-11-13T20:57:41-06:00"
+                }
+              ]
+            }
+
+### Payment Create [POST]
+
++ Attributes (Payment)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "amount": "2.5",
+              "name": "payment test",
+              "transaction_date": "11/11/2014",
+              "order_id": "10798"
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 221166,
+              "details": {},
+              "order_id": 10798,
+              "transaction_date": "2014-11-11T00:00:00-06:00",
+              "name": "payment test",
+              "amount": "2.5",
+              "created_at": "2015-12-28T10:50:14-06:00",
+              "updated_at": "2015-12-28T10:50:14-06:00"
+            }
+
+## Payment [/api/{version}/payments/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `1046`) - Payment id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Payment Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 1046,
+              "details": {},
+              "order_id": null,
+              "transaction_date": "2012-10-26T11:09:32-06:00",
+              "name": "asdf",
+              "amount": "15.0",
+              "created_at": "2012-10-26T11:09:32-06:00",
+              "updated_at": "2013-05-01T22:04:07-06:00"
+            }
+
+### Payment Update [PUT]
+
++ Attributes (Paymentupdate)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "amount": "10.0",
+              "name": "payment test"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 1046,
+              "details": {},
+              "order_id": null,
+              "transaction_date": "2012-10-26T11:09:32-06:00",
+              "name": "payment test",
+              "amount": "10.0",
+              "created_at": "2012-10-26T11:09:32-06:00",
+              "updated_at": "2015-12-28T09:51:01-07:00"
+            }
+
+### Payment Delete [DELETE]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 1046,
+              "details": {},
+              "order_id": null,
+              "transaction_date": "2012-10-26T11:09:32-06:00",
+              "name": "payment test",
+              "amount": "10.0",
+              "created_at": "2012-10-26T11:09:32-06:00",
+              "updated_at": "2015-12-28T09:51:01-07:00"
+            }
+            
+# Group Payment Terms
+
+## Payment Terms Collection [/api/{version}/payment_terms{?email}{?token}{?page}{?per_page}]
+Actions on the PaymentTerms resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of payments per page.
+        + Default: `20`
+        
+### PaymentTerms Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 39,
+                "total_pages": 2
+              },
+              "data": [
+                {
+                  "id": 202051,
+                  "name": "Net 30",
+                  "days": 30,
+                  "created_at": "2015-11-13T20:57:41-06:00",
+                  "updated_at": "2015-11-13T20:57:41-06:00",
+                  "archived": false
+                }
+              ]
+            }
+            
+### PaymentTerm Create [POST]
+
++ Attributes (PaymentTerm)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "name": "Net 30",
+              "days": 30
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 202051,
+              "name": "Net 30",
+              "days": 30,
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+            
+## PaymentTerm [/api/{version}/payment_terms/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `13484`) - PaymentTerm id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+            
+### PaymentTerm Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 202051,
+              "name": "Net 30",
+              "days": 30,
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+            
+### PaymentTerm Update [PUT]
+
++ Attributes (PaymentTerm)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "name": "Net 30",
+              "days": 30
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 202051,
+              "name": "Net 30",
+              "days": 30,
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+
+### PaymentTerm Archive [PUT /api/{version}/payment_terms/{id}/archive{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - PaymentTerm id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 202051,
+              "name": "Net 30",
+              "days": 30,
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": true
+            }
+            
+### PaymentTerm Restore [PUT /api/{version}/payment_terms/{id}/restore{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - PaymentTerm id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 202051,
+              "name": "Net 30",
+              "days": 30,
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+
+# Group Orderstatuses
+
+## Orderstatuses collection [/api/{version}/orderstatuses{?email}{?token}{?page}{?per_page}]
+Actions on the Orderstatuses resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of order statuses per page.
+        + Default: `20`
+
+### Orderstatuses Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 10,
+                "total_pages": 1
+              },
+              "data": [
+                {
+                  "id": 13484,
+                  "name": "Shipped ",
+                  "color": "336646",
+                  "created_at": "2014-04-02T23:30:26-05:00",
+                  "updated_at": "2015-08-31T21:59:19-05:00"
+                }
+              ]
+            }
+
+## Orderstatus [/api/{version}/orderstatuses/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `13484`) - Delivery Method id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Orderstatus Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 13484,
+              "name": "Shipped ",
+              "color": "336646",
+              "created_at": "2014-04-02T23:30:26-05:00",
+              "updated_at": "2015-08-31T21:59:19-05:00"
+            }
+            
+# Group Delivery Methods
+            
+## Delivery Methods collection [/api/{version}/delivery_methods{?email}{?token}{?page}{?per_page}]
+Actions on the Delivery Methods resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+    + page (optional, string) - Number of page.
+        + Default: `1`
+    + per_page (optional, string) - Number of order statuses per page.
+        + Default: `20`
+
+### Delivery Methods Index [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "meta": {
+                "page": 1,
+                "per_page": 20,
+                "total_count": 10,
+                "total_pages": 1
+              },
+              "data": [
+                {
+                  "id": 12312,
+                  "name": "USPS",
+                  "archived": false,
+                  "created_at": "2014-04-02T23:30:26-05:00",
+                  "updated_at": "2015-08-31T21:59:19-05:00"
+                },
+                {
+                  "id": 12313,
+                  "name": "FedEx",
+                  "archived": true,
+                  "created_at": "2014-04-02T23:30:26-05:00",
+                  "updated_at": "2015-08-31T21:59:19-05:00"
+                }
+              ]
+            }
+            
+### Delivery Method Create [POST]
+
++ Attributes (DeliveryMethod)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "name": "USPS"
+            }
+
++ Response 201 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 12312,
+              "name": "USPS",
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+  
+
+## Delivery Method [/api/{version}/delivery_methods/{id}{?email}{?token}]
+Actions on the :id resource
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `13484`) - Orderstatus id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
+### Delivery Method Show [GET]
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 12312,
+              "name": "USPS",
+              "archived": false,
+              "created_at": "2014-04-02T23:30:26-05:00",
+              "updated_at": "2015-08-31T21:59:19-05:00"
+            }
+            
+### Delivery Method Update [PUT]
+
++ Attributes (DeliveryMethod)
+
++ Request (application/json)
+
+    + Headers
+
+            Accept-Charset: utf-8
+            Connection: keep-alive
+    + Body
+
+            {
+              "name": "Fedex"
+            }
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 12312,
+              "name": "Fedex",
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00", 
+              "archived": false
+            }
+
+### Delivery Method Archive [PUT /api/{version}/delivery_methods/{id}/archive{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - PaymentTerm id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 12312,
+              "name": "USPS",
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": true
+            }
+            
+### Delivery Method Restore [PUT /api/{version}/payment_terms/{id}/restore{?email}{?token}]
+
++ Parameters
+
+    + version (required, string, `v1`) - API version.
+    + id (required, number, `307355`) - PaymentTerm id.
+    + email (required, string, `test@example.com`) - User email
+    + token (required, string, `1dofnewoi233`) - Login token
+
++ Response 200 (application/json)
+
+    + Headers
+
+            Connection: keep-alive
+
+    + Body
+
+            {
+              "id": 12312,
+              "name": "USPS",
+              "created_at": "2015-11-13T20:57:41-06:00",
+              "updated_at": "2015-11-13T20:57:41-06:00",
+              "archived": false
+            }
+
+
+# Data Structures
+
+## Customer (object)
++ first_name (optional, string)
++ last_name (optional, string)
++ user_id (optional, number)
++ company (required, string)
++ customer_email (optional, string) - Multiple emails can be added using commas.
++ phone (optional, string)
++ extra_notes (optional, string) - Additional notes about the customer.
++ fax (optional, string)
++ tax_exempt (optional, boolean) - Customer tax exempt?. Default: false.
++ tax_resale_num (optional, string) - Resale Number.
++ sales_tax (optional, number) - Sales tax as a percentage. Ex: '8.8'
++ billing_address_attributes (optional, object) - Hash with data for Billing Address.
+    + address1 (optional, string)
+    + address2 (optional, string)
+    + city (optional, string)
+    + state (optional, string) - State as the full name. ex: 'Illinois'
+    + zip (optional, string)
+    + country (optional, string) - Country as 2 digit code. Ex: 'US'
++ shipping_address_attributes (optional, object) - Hash with data for Shipping Address.
+    + address1 (optional, string)
+    + address2 (optional, string)
+    + city (optional, string)
+    + state (optional, string) - State as the full name. Ex: 'Illinois'
+    + zip (optional, string)
+    + country (optional, string) - Country as 2 digit code. Ex: 'US'
++ sub_customers_attributes (optional, object) - Hash with data for SubCustomers.
+    + first_name (optional, string)
+    + last_name (optional, string)
+    + user_id (optional, number)
+    + phone (optional, string)
+    + email (optional, string)
+    + fax (optional, string)
+
+## Product (object)
++ brand (optional, string)
++ style_number (optional, string)
++ style_description (optional, string)
++ color (optional, string)
++ size (optional, string)
++ price_per (optional, number)
++ dozens_price (optional, number)
++ case_price (optional, number)
+
+## Order (object)
++ user_id (required, number)
++ customer_id (required, number)
++ orderstatus_id (required, number)
++ visual_po_number (optional, string)
++ due_date (optional, string) - Production due date with a time component. Format: ISO8601
++ formatted_custom_created_at_date (optional, string) - Custom created at date. Format: MM/DD/YYYY
++ formatted_due_date (optional, string) - Production due date. Format: MM/DD/YYYY
++ formatted_customer_due_date (required, string) - Customer due date. Format: MM/DD/YYYY
++ formatted_invoice_date (optional, string) - Invoice date. Format: MM/DD/YYYY
++ formatted_payment_due_date (optional, string) - Payment due date. Format: MM/DD/YYYY
++ sales_tax (optional, number) - Sales tax as a percentage. Ex: '8.8'
++ discount (optional, number) - Discount as a percentage or amount. Example: 10% = 10.0 or $20 = 15.0.
++ discount_as_percentage (optional, boolean) - Is the discount a percentage? If not then it's a fixed amount. Default: false.
++ order_nickname (optional, string) - Nickname for the order.
++ approved (optional, boolean) - Is the order approved?. Default: false.
++ approved_name (optional, string) - This is mandatory if approved is true.
++ production_notes (optional, string) - Notes visible to user accounts that are logged in.
++ notes (optional, string) - Notes visible to the customer and to user accounts logged in.
++ payment_term_id (optional, number)
++ delivery_method_id (optional, number)
++ delivery_method_id (optional, number)
++ order_addresses_attributes (optional, array)
+    + name (required, string) - First two addresses must be 'Customer Billing', 'Customer Shipping'
+    + company_name (optional, string)
+    + customer_name (optional, string)
+    + address1 (optional, string)
+    + address2 (optional, string)
+    + city (optional, string)
+    + state (optional, string) - State as the full name. ex: 'Illinois'
+    + zip (optional, string)
+    + country (optional, string) - Country as 2 digit code. Ex: 'US'
++ lineitems_attributes (optional, object)
+    + style_description (optional, string) - Description of line item
+    + style_number (optional, string) - Brand style number
+    + color (optional, string)
+    + category_id (optional, number) - Category ID
+    + size_6m (optional, number) - Size - 6 Months
+    + size_12m (optional, number) - Size - 12 Months
+    + size_18m (optional, number) - Size - 18 Months
+    + size_24m (optional, number) - Size - 24 Months
+    + size_2t (optional, number) - Size - 2 Toddler
+    + size_3t (optional, number) - Size - 3 Toddler
+    + size_4t (optional, number) - Size - 4 Toddler
+    + size_5t (optional, number) - Size - 5 Toddler
+    + size_yxs (optional, number) - Size - Youth X-Small
+    + size_ys (optional, number) - Size - Youth Small
+    + size_ym (optional, number) - Size - Youth Medium
+    + size_yl (optional, number) - Size - Youth Large
+    + size_yxl (optional, number) - Size - Youth X-Large
+    + size_xs (optional, number) - Size - X-Small
+    + size_s (optional, number) - Size - Small
+    + size_m (optional, number) - Size - Medium
+    + size_l (optional, number) - Size - Large
+    + size_xl (optional, number) - Size - X-Large
+    + size_2xl (optional, number) - Size - 2X-Large
+    + size_3xl (optional, number) - Size - 3X-Large
+    + size_4xl (optional, number) - Size - 4X-Large
+    + size_5xl (optional, number) - Size - 5X-Large
+    + size_6xl (optional, number) - Size - 6X-Large
+    + size_other (optional, number) - Size - General
+    + unit_cost (required, number)
+    + taxable (optional, boolean) - Is this line item taxed? Default: true
+    + images_attributes (optional, object)
+        + file_url (required, string) - Image must be uploaded to Filestack.com, ex: "https://www.filepicker.io/api/file/PNvWyfxQRaVhwJgLY8E3"
+        + mime_type (required, string) - File type, ex: "image/png"
+    + print_locations_attributes (optional, object)
+        + details (optional, string)
++ production_notes_files_attributes (optional, object) - Production files are used to store vectorized/digitized files on an Order
+    + file_url (required, string) - Image must be uploaded to Filestack.com, ex: "https://www.filepicker.io/api/file/PNvWyfxQRaVhwJgLY8E3"
+    + mime_type (required, string) - File type, ex: "image/png"
++ order_fees_attributes (optional, object)
+    + amount (required, number)
+    + description (optional, string)
+    + taxable (optional, boolean) - Is this fee taxable?. Default: false.
+
+## Inquirie (object)
++ description (optional, string)
++ customer_phone (optional, string)
++ customer_email (optional, string)
+
+## Task (object)
++ task_name (optional, string) - Description/Name of the task
++ formatted_due_date (optional, string) - Example: MM/DD/YYYY
++ assigned_user_id (optional, number) - Assign this task to a User
++ taskable_id (optional, number) - Either a Customer or Order ID to attach this task to an order or customer
++ taskable_type (optional, string) - Either 'Order' or 'Customer' to attach this task to an order or customer
+
+## Expense (object)
++ amount (required, number)
++ name (required, string)
++ transaction_date (required, string)
+
+## Expenseupdate (object)
++ amount (optional, number)
++ name (optional, string)
++ transaction_date (optional, string)
+
+## Payment (object)
++ amount (required, number)
++ name (required, string)
++ transaction_date (required, string)
++ order_id (required, number)
+
+## PaymentTerm (object)
++ name (required, string)
++ days (required, number)
+
+## DeliveryMethod (object)
++ name (required, string)
++ archived (optional, boolean)
+
+## BookPayment (object)
++ book
+  + amount (required, number)
+  + formatted_transaction_date (required, string) - "MM/DD/YYYY"
+  + book_category_id (optional, number)
+  + name (optional, string)
+  + user_generated (optional, string)
+
+## BookPaymentRequest (object)
++ payment_request
+  + cc_boolean (optional, boolean) - "Do you want to CC the invoice creator?"
+  + cc_recipients (optional, string) - "tim@example.com, jane@example.com"
+  + send_email (optional, boolean) - "Would you like to send an email to the customer for this invoice to request the payment?"
+  + amount (required, string) - "The amount you'd like to to request, example: '150.25'"
+  + account (object)
+    + payment_request_template (optional, string) - "The body of the email if you'd like to send an email to the customer"
+
+## Paymentupdate (object)
++ amount (optional, number)
++ name (optional, string)
++ transaction_date (optional, string)
+
+## EmailInvoice (object)
++ order (object)
+  + email_to (required, string)
+  + cc_invoice_creator (optional, boolean)
+  + account (object)
+      - invoice_template_subject_line (required, string)
+      - invoice_template (required, string)
