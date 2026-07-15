@@ -1,4 +1,11 @@
-export const APP_ROLES = ["owner", "admin", "staff", "customer"] as const;
+export const APP_ROLES = [
+  "owner",
+  "admin",
+  "staff",
+  "production_lead",
+  "production_worker",
+  "customer",
+] as const;
 
 export type AppRole = (typeof APP_ROLES)[number];
 
@@ -19,7 +26,13 @@ export function canViewReports(role: AppRole | null | undefined) {
 }
 
 export function canUseOperations(role: AppRole | null | undefined) {
-  return role === "owner" || role === "admin" || role === "staff";
+  return (
+    role === "owner" ||
+    role === "admin" ||
+    role === "staff" ||
+    role === "production_lead" ||
+    role === "production_worker"
+  );
 }
 
 export function canUseCustomerPortal(role: AppRole | null | undefined) {

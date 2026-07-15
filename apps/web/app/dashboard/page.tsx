@@ -14,6 +14,8 @@ const roleLabels = {
   owner: "Owner",
   admin: "Admin",
   staff: "Staff",
+  production_lead: "Production Lead",
+  production_worker: "Production Worker",
   customer: "Customer",
 };
 

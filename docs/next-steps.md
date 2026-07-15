@@ -35,6 +35,7 @@ Phase 1 PRD/spec documents:
 - [Workflow Config And Versioning](/Users/gdylanc/workspace/mythic/mythic/docs/prd/workflow-config.md)
 - [Printavo Sync](/Users/gdylanc/workspace/mythic/mythic/docs/prd/printavo-sync.md)
 - [POC Implementation Plan](/Users/gdylanc/workspace/mythic/mythic/docs/prd/poc-implementation-plan.md)
+- [Database Environment Strategy](/Users/gdylanc/workspace/mythic/mythic/docs/prd/database-environment-strategy.md)
 
 ## What We Are Building
 
