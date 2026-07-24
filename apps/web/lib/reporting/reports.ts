@@ -17,6 +17,14 @@ export const reports: ReportDefinition[] = [
   },
   {
     description:
+      "Manual POC sync for recent paid Printavo orders into Mythic production jobs.",
+    href: "/reporting/printavo-sync",
+    source: "Printavo",
+    status: "Discovery",
+    title: "Production Sync POC",
+  },
+  {
+    description:
       "Read-only S&S inventory lookup for a known SKU, including warehouse quantities.",
     href: "/reporting/ss-inventory",
     source: "S&S Activewear",

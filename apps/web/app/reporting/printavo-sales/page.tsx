@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { HoverText } from "@/app/components/hover-text";
 import {
   getPrintavoSalesReport,
   testPrintavoConnection,
@@ -7,6 +8,7 @@ import {
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canViewReports } from "@/lib/auth/roles";
 import { formatCurrency } from "@/lib/formatters";
+import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 
 const reportStartDate = "2025-12-01";
 const reportEndDate = "2026-06-30";
@@ -32,12 +34,16 @@ export default async function PrintavoSalesReportPage() {
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
         <header className="border-b border-neutral-800 pb-6">
           <div className="flex gap-4 text-sm text-neutral-400">
-            <Link href="/dashboard" className="hover:text-neutral-200">
-              Dashboard
-            </Link>
-            <Link href="/reporting" className="hover:text-neutral-200">
-              Reporting
-            </Link>
+            <HoverText text={hoverTextCopy.links.dashboard}>
+              <Link href="/dashboard" className="hover:text-neutral-200">
+                Dashboard
+              </Link>
+            </HoverText>
+            <HoverText text={hoverTextCopy.links.reporting}>
+              <Link href="/reporting" className="hover:text-neutral-200">
+                Reporting
+              </Link>
+            </HoverText>
           </div>
           <p className="mt-6 text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
             Printavo

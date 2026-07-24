@@ -13,21 +13,38 @@ type PrintavoConnectionResult =
       data?: unknown;
     };
 
-type PrintavoOrder = {
+export type PrintavoOrder = {
+  amount_outstanding?: number | string | null;
+  amount_paid?: number | string | null;
   approved?: boolean | null;
   id: number;
   custom_created_at?: string | null;
-  formatted_custom_created_at_date?: string | null;
-  order_subtotal?: number | string | null;
-  orderstatus?: {
+  customer?: {
+    company?: string | null;
+    full_name?: string | null;
     name?: string | null;
   } | null;
+  due_date?: string | null;
+  formatted_custom_created_at_date?: string | null;
+  order_nickname?: string | null;
+  order_subtotal?: number | string | null;
+  order_total?: number | string | null;
+  orderstatus_id?: number | null;
+  orderstatus?: {
+    id?: number | null;
+    name?: string | null;
+  } | null;
+  stats?: {
+    paid?: boolean | null;
+  } | null;
+  updated_at?: string | null;
   user?: {
     name?: string | null;
   } | null;
+  visual_id?: number | string | null;
 };
 
-type PrintavoOrdersResponse = {
+export type PrintavoOrdersResponse = {
   meta?: {
     page?: number;
     per_page?: number;
@@ -36,6 +53,22 @@ type PrintavoOrdersResponse = {
   };
   data?: PrintavoOrder[];
 };
+
+type PrintavoJsonRequestOptions = {
+  maxRetries?: number;
+  retryBaseDelayMs?: number;
+};
+
+class PrintavoHttpError extends Error {
+  constructor(
+    message: string,
+    readonly status: number,
+    readonly body: unknown,
+    readonly url: string,
+  ) {
+    super(message);
+  }
+}
 
 export type PrintavoSalesReportCell = {
   amount: number;
@@ -76,7 +109,7 @@ export type PrintavoSalesReport =
       error: string;
     };
 
-function getPrintavoConfig() {
+export function getPrintavoConfig() {
   const baseUrl = process.env.PRINTAVO_API_BASE_URL ?? "https://www.printavo.com";
   const version = process.env.PRINTAVO_API_VERSION ?? "v1";
   const email = process.env.PRINTAVO_API_EMAIL;
@@ -98,6 +131,111 @@ function getPrintavoConfig() {
   };
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+function retryAfterMs(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  const seconds = Number(value);
+
+  if (Number.isFinite(seconds)) {
+    return Math.max(0, seconds * 1000);
+  }
+
+  const retryAt = Date.parse(value);
+
+  if (Number.isFinite(retryAt)) {
+    return Math.max(0, retryAt - Date.now());
+  }
+
+  return null;
+}
+
+async function readResponseBody(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return response.text();
+}
+
+export async function fetchPrintavoJson<T>(
+  url: URL,
+  {
+    maxRetries = 3,
+    retryBaseDelayMs = 1500,
+  }: PrintavoJsonRequestOptions = {},
+): Promise<T> {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+        cache: "no-store",
+      });
+      const body = await readResponseBody(response);
+
+      if (response.ok) {
+        return body as T;
+      }
+
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (!retryable || attempt >= maxRetries) {
+        throw new PrintavoHttpError(
+          `Printavo request failed with ${response.status} ${response.statusText}.`,
+          response.status,
+          body,
+          `${url.origin}${url.pathname}`,
+        );
+      }
+
+      const requestedDelay = retryAfterMs(response.headers.get("retry-after"));
+      const fallbackDelay = retryBaseDelayMs * 2 ** attempt;
+      const delayMs = requestedDelay ?? fallbackDelay;
+
+      console.warn("[printavo] retrying request after rate limit/server error", {
+        attempt: attempt + 1,
+        delayMs,
+        status: response.status,
+        url: `${url.origin}${url.pathname}`,
+      });
+
+      await wait(delayMs);
+    } catch (error) {
+      lastError = error;
+
+      if (error instanceof PrintavoHttpError) {
+        throw error;
+      }
+
+      if (attempt >= maxRetries) {
+        break;
+      }
+
+      await wait(retryBaseDelayMs * 2 ** attempt);
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+
+  throw new Error("Unknown Printavo request failure.");
+}
+
 export async function testPrintavoConnection(): Promise<PrintavoConnectionResult> {
   const config = getPrintavoConfig();
 
@@ -117,37 +255,11 @@ export async function testPrintavoConnection(): Promise<PrintavoConnectionResult
   url.searchParams.set("token", config.token);
 
   try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept: "application/json",
-      },
-      cache: "no-store",
-    });
-    const contentType = response.headers.get("content-type") ?? "";
-    const data = contentType.includes("application/json")
-      ? await response.json()
-      : await response.text();
-
-    if (!response.ok) {
-      console.error("[printavo] connection test failed:", {
-        status: response.status,
-        statusText: response.statusText,
-        data,
-      });
-
-      return {
-        ok: false,
-        status: response.status,
-        url: `${url.origin}${url.pathname}`,
-        error: `Printavo returned ${response.status} ${response.statusText}.`,
-        data,
-      };
-    }
+    const data = await fetchPrintavoJson<unknown>(url);
 
     return {
       ok: true,
-      status: response.status,
+      status: 200,
       url: `${url.origin}${url.pathname}`,
       data,
     };
@@ -216,13 +328,19 @@ function addCell(
   };
 }
 
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
-async function fetchPrintavoOrdersPage(page: number, perPage: number) {
+export async function fetchPrintavoOrdersPage({
+  direction = "desc",
+  page,
+  perPage,
+  retryBaseDelayMs,
+  sortColumn = "custom_created_at",
+}: {
+  direction?: "asc" | "desc";
+  page: number;
+  perPage: number;
+  retryBaseDelayMs?: number;
+  sortColumn?: string;
+}) {
   const config = getPrintavoConfig();
 
   if (!config.ok) {
@@ -234,33 +352,12 @@ async function fetchPrintavoOrdersPage(page: number, perPage: number) {
   url.searchParams.set("token", config.token);
   url.searchParams.set("page", String(page));
   url.searchParams.set("per_page", String(perPage));
-  url.searchParams.set("sort_column", "custom_created_at");
-  url.searchParams.set("direction", "desc");
+  url.searchParams.set("sort_column", sortColumn);
+  url.searchParams.set("direction", direction);
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      Accept: "application/json",
-    },
-    cache: "no-store",
+  return fetchPrintavoJson<PrintavoOrdersResponse>(url, {
+    retryBaseDelayMs,
   });
-  const body = (await response.json()) as PrintavoOrdersResponse | {
-    error?: string;
-    message?: string;
-  };
-
-  if (!response.ok) {
-    console.error("[printavo] orders report page failed:", {
-      page,
-      status: response.status,
-      statusText: response.statusText,
-      body,
-    });
-
-    throw new Error(`Printavo orders request failed with ${response.status}.`);
-  }
-
-  return body as PrintavoOrdersResponse;
 }
 
 export async function getPrintavoSalesReport({
@@ -293,7 +390,11 @@ export async function getPrintavoSalesReport({
         await wait(pageDelayMs);
       }
 
-      const body = await fetchPrintavoOrdersPage(page, perPage);
+      const body = await fetchPrintavoOrdersPage({
+        page,
+        perPage,
+        retryBaseDelayMs: Math.max(pageDelayMs, 1500),
+      });
       const orders = body.data ?? [];
       pagesFetched = page;
       totalPages = body.meta?.total_pages ?? totalPages;

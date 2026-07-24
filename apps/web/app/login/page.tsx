@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { signIn } from "./actions";
+import { HoverText } from "@/app/components/hover-text";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
+import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
 
 type LoginPageProps = {
@@ -69,13 +71,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </p>
           ) : null}
 
-          <PendingSubmitButton
-            className="h-11 w-full rounded-md bg-emerald-400 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300"
-            pendingLabel="Signing in"
-            type="submit"
-          >
-            Sign in
-          </PendingSubmitButton>
+          <HoverText className="w-full" text={hoverTextCopy.actions.signIn}>
+            <PendingSubmitButton
+              className="h-11 w-full rounded-md bg-emerald-400 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300"
+              pendingLabel="Signing in"
+              type="submit"
+            >
+              Sign in
+            </PendingSubmitButton>
+          </HoverText>
         </form>
       </section>
     </main>

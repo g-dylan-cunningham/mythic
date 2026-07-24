@@ -1,6 +1,6 @@
 # Next Steps: Medium Production Workflow Build
 
-Last updated: 2026-07-09
+Last updated: 2026-07-23
 
 ## At A Glance
 
@@ -61,6 +61,34 @@ Mythic should own the production side:
 - Production reporting.
 
 ## Rollout Plan
+
+### Current Status As Of 2026-07-23
+
+Completed POC foundation:
+
+- Workflow config, production job, production task, event, and Printavo mapping
+  tables exist locally.
+- Screen printing v1 is seeded.
+- Workflow engine helpers exist outside the UI.
+- Manual Printavo sync can create production jobs idempotently.
+- Minimal production UI exists for job list, job detail, task tracks,
+  suggestions, and event timeline.
+
+Phase 7 expansion has started with the first medium-build slice:
+
+- Production lead command center.
+- Role queues for production lead, staff/sourcing, and production worker.
+- Flow queues for receiving, customer fulfillment, and blocked work.
+- Estimate/difficulty visibility in the lead view.
+
+Still intentionally deferred:
+
+- QR scan flow.
+- Real time tracking start/stop.
+- Specialized receiving exception forms.
+- Production reports beyond operational queue summaries.
+- Printavo write-back.
+- Embroidery workflow.
 
 ### Phase 0: Alignment And Workflow Inventory
 
@@ -204,6 +232,16 @@ Deliverable:
 ### Phase 6: Receiving, QR, Time Tracking, And Reports
 
 Purpose: complete the medium build with operational leverage.
+
+Recommended build order:
+
+1. Receiving workflow with exception capture.
+2. Time estimates and difficulty review/editing.
+3. Time tracking by task/job/worker.
+4. QR scan shortcuts for open job, receive goods, and start/stop work.
+5. Production reports.
+6. Optional Printavo write-back for major milestones.
+7. Embroidery workflow as a separate workflow definition and product category.
 
 Receiving:
 

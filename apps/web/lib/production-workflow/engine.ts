@@ -19,6 +19,7 @@ export type ProductionTaskStatus =
   | "skipped";
 
 export type PrintavoOrderForProduction = {
+  amount_paid?: number | string | null;
   id: number;
   order_number?: string | number | null;
   invoice_number?: string | number | null;
@@ -620,6 +621,8 @@ export async function blockTask(
     .update({
       status: "blocked" satisfies ProductionTaskStatus,
       blocked_reason: input.reason,
+      completed_at: null,
+      completed_by: null,
     })
     .eq("id", task.id)
     .select(
@@ -642,6 +645,50 @@ export async function blockTask(
     workflowDefinitionId: job.workflow_definition_id,
     workflowVersion: job.workflow_version,
     reason: input.reason,
+    note: input.note,
+    metadata: {
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return updatedTask;
+}
+
+export async function reopenTask(
+  supabase: SupabaseClient,
+  input: TaskMutationInput,
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const { data: updatedTask, error } = await supabase
+    .from("production_tasks")
+    .update({
+      status: "open" satisfies ProductionTaskStatus,
+      blocked_reason: null,
+      completed_at: null,
+      completed_by: null,
+    })
+    .eq("id", task.id)
+    .select(
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+    )
+    .single<ProductionTask>();
+
+  assertNoError(error, "reopen_task");
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_reopened",
+    source: input.source ?? "manual",
+    fromStateKey: task.status,
+    fromStateLabel: task.status,
+    toStateKey: "open",
+    toStateLabel: "Open",
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
     note: input.note,
     metadata: {
       workflow_step_key: task.workflow_step_key,

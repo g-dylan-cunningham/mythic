@@ -343,7 +343,8 @@ task_states as (
       ('art.artwork_approved', 'complete'),
       ('art.ready_to_burn_screens', 'complete'),
       ('apparel.confirm_garment_requirements', 'complete'),
-      ('apparel.build_supplier_cart', 'in_progress'),
+      ('apparel.build_supplier_cart', 'complete'),
+      ('apparel.approve_cart', 'in_progress'),
       ('apparel.order_apparel', 'open'),
       ('apparel.apparel_shipped', 'open'),
       ('apparel.apparel_received', 'open')

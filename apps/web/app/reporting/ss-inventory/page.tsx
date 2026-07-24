@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { HoverText } from "@/app/components/hover-text";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canViewReports } from "@/lib/auth/roles";
 import { formatCurrency } from "@/lib/formatters";
 import { getSsStyleInventoryReport } from "@/lib/ss/client";
+import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 
 type SearchParams = {
   color?: string | string[];
@@ -90,12 +92,16 @@ export default async function SsInventoryReportPage({
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
         <header className="border-b border-neutral-800 pb-6">
           <div className="flex gap-4 text-sm text-neutral-400">
-            <Link href="/dashboard" className="hover:text-neutral-200">
-              Dashboard
-            </Link>
-            <Link href="/reporting" className="hover:text-neutral-200">
-              Reporting
-            </Link>
+            <HoverText text={hoverTextCopy.links.dashboard}>
+              <Link href="/dashboard" className="hover:text-neutral-200">
+                Dashboard
+              </Link>
+            </HoverText>
+            <HoverText text={hoverTextCopy.links.reporting}>
+              <Link href="/reporting" className="hover:text-neutral-200">
+                Reporting
+              </Link>
+            </HoverText>
           </div>
           <p className="mt-6 text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
             S&S Activewear
@@ -188,12 +194,14 @@ export default async function SsInventoryReportPage({
                     type="number"
                   />
                 </label>
-                <PendingSubmitButton
-                  className="h-11 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300"
-                  pendingLabel="Checking"
-                >
-                  Check
-                </PendingSubmitButton>
+                <HoverText text={hoverTextCopy.actions.ssInventoryCheck}>
+                  <PendingSubmitButton
+                    className="h-11 rounded-md bg-emerald-400 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-emerald-300"
+                    pendingLabel="Checking"
+                  >
+                    Check
+                  </PendingSubmitButton>
+                </HoverText>
               </form>
             </section>
 

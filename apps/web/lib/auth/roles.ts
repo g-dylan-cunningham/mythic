@@ -21,6 +21,12 @@ export function canManageUsers(role: AppRole | null | undefined) {
   return role === "owner" || role === "admin";
 }
 
+export function canViewOwnerProductionOverview(
+  role: AppRole | null | undefined,
+) {
+  return role === "owner";
+}
+
 export function canViewReports(role: AppRole | null | undefined) {
   return role === "owner" || role === "admin";
 }
@@ -33,6 +39,14 @@ export function canUseOperations(role: AppRole | null | undefined) {
     role === "production_lead" ||
     role === "production_worker"
   );
+}
+
+export function canManageProduction(role: AppRole | null | undefined) {
+  return role === "owner" || role === "admin" || role === "production_lead";
+}
+
+export function canWorkProductionTasks(role: AppRole | null | undefined) {
+  return canManageProduction(role) || role === "production_worker";
 }
 
 export function canUseCustomerPortal(role: AppRole | null | undefined) {
