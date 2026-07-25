@@ -11,6 +11,7 @@ import {
 import {
   blockTask,
   completeTask,
+  phaseGateDependsOnTask,
   reopenTask,
   suggestNextActions,
   transitionProductionJobPhase,
@@ -38,30 +39,6 @@ function revalidateJob(jobId: string) {
   revalidatePath(`/production/${jobId}`);
 }
 
-async function isTaskTrackComplete(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  jobId: string,
-  track: string,
-) {
-  const { data: trackTasks, error } = await supabase
-    .from("production_tasks")
-    .select("status")
-    .eq("production_job_id", jobId)
-    .eq("track_snapshot", track)
-    .returns<Array<{ status: string }>>();
-
-  if (error) {
-    throw new Error(error.message);
-  }
-
-  return (
-    (trackTasks?.length ?? 0) > 0 &&
-    (trackTasks ?? []).every(
-      (task) => task.status === "complete" || task.status === "skipped",
-    )
-  );
-}
-
 export async function completeProductionTask(formData: FormData) {
   const { profile, user } = await requireProductionAccess();
   const jobId = formValue(formData, "jobId");
@@ -86,18 +63,18 @@ export async function completeProductionTask(formData: FormData) {
 
   revalidateJob(jobId);
 
-  const completedLastTaskInTrack = await isTaskTrackComplete(
-    supabase,
-    jobId,
-    completedTask.track_snapshot,
-  );
-
-  if (completedLastTaskInTrack && canManageProduction(profile.role)) {
+  if (canManageProduction(profile.role)) {
     const nextPhase = (await suggestNextActions(supabase, jobId)).find(
       (suggestion) => suggestion.type === "advance_phase",
     );
 
-    if (nextPhase) {
+    if (
+      nextPhase &&
+      phaseGateDependsOnTask(
+        nextPhase.workflowStepKey,
+        completedTask.workflow_step_key,
+      )
+    ) {
       const params = new URLSearchParams({
         advanceStage: "1",
         toPhaseKey: nextPhase.workflowStepKey,

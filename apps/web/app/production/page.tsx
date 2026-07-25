@@ -136,7 +136,7 @@ export default async function ProductionJobsPage() {
                 <h2 className="text-lg font-semibold">Owner overview</h2>
                 <p className="mt-2 text-sm leading-6 text-neutral-400">
                   Read-only Kanban-style board for scanning customers, order
-                  context, phases, completion, and blockers.
+                  context, production phases, completion, and blockers.
                 </p>
               </Link>
             </HoverText>

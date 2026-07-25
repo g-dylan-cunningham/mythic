@@ -13,6 +13,7 @@ import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
   canManageProduction,
   canUseOperations,
+  canViewOwnerProductionOverview,
   canWorkProductionTasks,
 } from "@/lib/auth/roles";
 import { suggestNextActions } from "@/lib/production-workflow/engine";
@@ -78,6 +79,34 @@ const trackLabels: Record<string, string> = {
   production_prep: "Production Prep",
 };
 
+const taskPhaseLabels: Record<string, string[]> = {
+  "apparel.confirm_garment_requirements": ["Needs sourcing"],
+  "apparel.build_supplier_cart": ["Needs sourcing"],
+  "apparel.approve_cart": ["Needs sourcing"],
+  "apparel.order_apparel": ["Needs sourcing", "Awaiting goods"],
+  "apparel.apparel_shipped": ["Awaiting goods"],
+  "apparel.apparel_received": ["Goods received"],
+  "art.confirm_artwork_needed": ["Needs sourcing"],
+  "art.create_revise_artwork": ["Needs sourcing"],
+  "art.send_artwork_approval": ["Needs sourcing"],
+  "art.artwork_approved": ["Ready for production"],
+  "art.ready_to_burn_screens": ["Ready for production"],
+  "prep.burn_screens": ["Ready for production"],
+  "prep.confirm_print_locations": ["Ready for production"],
+  "prep.confirm_ink_color_count": ["Ready for production"],
+  "prep.confirm_garment_handling": ["Ready for production"],
+  "prep.confirm_finishing_requirements": ["Ready for production"],
+  "prep.estimate_difficulty_time": ["Ready for production"],
+  "prep.assign_press_day": ["Scheduled"],
+  "production.ready_for_production": ["Ready for production"],
+  "production.in_production": ["In production"],
+  "production.finishing_qc": ["Finishing / QC"],
+  "production.production_complete": ["Production complete"],
+  "fulfillment.ready_inventory": ["After production complete"],
+  "fulfillment.shipped_picked_up": ["After production complete"],
+  "fulfillment.received_by_customer": ["After production complete"],
+};
+
 const statusClasses: Record<string, string> = {
   blocked: "border-red-400/30 bg-red-400/10 text-red-100",
   cancelled: "border-neutral-600 bg-neutral-800 text-neutral-300",
@@ -110,6 +139,10 @@ function formatDateTime(value: string | null) {
 
 function labelForTrack(track: string) {
   return trackLabels[track] ?? track.replaceAll("_", " ");
+}
+
+function phasesForTask(workflowStepKey: string) {
+  return taskPhaseLabels[workflowStepKey] ?? ["Phase mapping pending"];
 }
 
 function groupedTasks(tasks: ProductionTaskRow[]) {
@@ -287,6 +320,16 @@ export default async function ProductionJobDetailPage({
                 Production
               </Link>
             </HoverText>
+            {canViewOwnerProductionOverview(profile.role) ? (
+              <HoverText text={hoverTextCopy.links.ownerOverview}>
+                <Link
+                  href="/production/owner-overview"
+                  className="hover:text-neutral-200"
+                >
+                  Owner overview
+                </Link>
+              </HoverText>
+            ) : null}
             <HoverText text={hoverTextCopy.jobDetail.printavoSync}>
               <Link
                 href="/reporting/printavo-sync"
@@ -350,6 +393,9 @@ export default async function ProductionJobDetailPage({
                 >
                   <summary className="flex cursor-pointer list-none items-center justify-between gap-4 border-b border-neutral-800 px-5 py-4 [&::-webkit-details-marker]:hidden">
                     <div>
+                      <p className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-neutral-500">
+                        Workstream
+                      </p>
                       <HoverText text={hoverTextCopy.jobDetail.taskTrack}>
                         <h2 className="text-lg font-semibold capitalize">
                           {labelForTrack(track)}
@@ -362,14 +408,14 @@ export default async function ProductionJobDetailPage({
                     <span
                       aria-hidden="true"
                       className="flex h-8 w-8 items-center justify-center rounded-md border border-neutral-700 bg-neutral-950 text-lg leading-none text-neutral-300 transition group-open:hidden"
-                      title="Expand section"
+                      title="Expand workstream"
                     >
                       +
                     </span>
                     <span
                       aria-hidden="true"
                       className="hidden h-8 w-8 items-center justify-center rounded-md border border-neutral-700 bg-neutral-950 text-lg leading-none text-neutral-300 transition group-open:flex"
-                      title="Collapse section"
+                      title="Collapse workstream"
                     >
                       -
                     </span>
@@ -388,6 +434,21 @@ export default async function ProductionJobDetailPage({
                           <p className="mt-2 font-mono text-xs text-neutral-500">
                             {task.workflow_step_key}
                           </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+                              Phase
+                            </span>
+                            {phasesForTask(task.workflow_step_key).map(
+                              (phase) => (
+                                <span
+                                  className="rounded-md border border-neutral-700 bg-neutral-950 px-2 py-1 text-xs text-neutral-300"
+                                  key={`${task.id}:${phase}`}
+                                >
+                                  {phase}
+                                </span>
+                              ),
+                            )}
+                          </div>
                           {task.blocked_reason ? (
                             <p className="mt-2 rounded-md border border-red-400/20 bg-red-400/10 px-3 py-2 text-sm text-red-100">
                               {task.blocked_reason}

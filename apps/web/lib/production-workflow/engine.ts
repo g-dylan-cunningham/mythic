@@ -89,6 +89,25 @@ type ProductionJob = {
   current_phase_label_snapshot: string;
 };
 
+const phaseGateDependencies: Record<string, string[]> = {
+  "phase.awaiting_goods": ["apparel.order_apparel"],
+  "phase.goods_received": ["apparel.apparel_received"],
+  "phase.ready_for_production": [
+    "apparel.apparel_received",
+    "art.ready_to_burn_screens",
+    "prep.burn_screens",
+    "prep.confirm_print_locations",
+    "prep.confirm_ink_color_count",
+    "prep.confirm_garment_handling",
+    "prep.confirm_finishing_requirements",
+    "prep.estimate_difficulty_time",
+  ],
+  "phase.scheduled": ["prep.assign_press_day"],
+  "phase.in_production": ["production.in_production"],
+  "phase.finishing_qc": ["production.finishing_qc"],
+  "phase.production_complete": ["production.production_complete"],
+};
+
 type ProductionTask = {
   id: string;
   production_job_id: string;
@@ -356,6 +375,22 @@ function unmetDependenciesFor(
       (dependency) =>
         !isCompleteEnough(tasksByKey.get(dependency.depends_on_step_key)),
     );
+}
+
+function unmetPhaseGateDependencies(
+  phaseKey: string,
+  tasksByKey: Map<string, ProductionTask>,
+) {
+  return (phaseGateDependencies[phaseKey] ?? []).filter(
+    (workflowStepKey) => !isCompleteEnough(tasksByKey.get(workflowStepKey)),
+  );
+}
+
+export function phaseGateDependsOnTask(
+  phaseKey: string,
+  workflowStepKey: string,
+) {
+  return (phaseGateDependencies[phaseKey] ?? []).includes(workflowStepKey);
 }
 
 export async function writeProductionJobEvent(
@@ -788,6 +823,26 @@ export async function canUserPerformTransition(
     };
   }
 
+  const tasksByKey = new Map(
+    (await getJobTasks(supabase, job.id)).map((task) => [
+      task.workflow_step_key,
+      task,
+    ]),
+  );
+  const unmetPhaseGateKeys = unmetPhaseGateDependencies(
+    input.toPhaseKey,
+    tasksByKey,
+  );
+
+  if (unmetPhaseGateKeys.length > 0) {
+    return {
+      allowed: false,
+      reason:
+        "This phase cannot be advanced until its required workstream tasks are complete.",
+      transition,
+    };
+  }
+
   return {
     allowed: true,
     reason: null,
@@ -943,17 +998,7 @@ export async function suggestNextActions(
       return [];
     }
 
-    const phaseTask = tasksByKey.get(transition.to_step_key);
-
-    if (
-      phaseTask &&
-      unmetDependenciesFor(
-        phaseTask,
-        tasksByKey,
-        dependencies,
-        "required_before_complete",
-      ).length > 0
-    ) {
+    if (unmetPhaseGateDependencies(transition.to_step_key, tasksByKey).length > 0) {
       return [];
     }
 

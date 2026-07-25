@@ -37,7 +37,7 @@ export const hoverTextCopy = {
     suggestions:
       "Next actions are generated from the workflow dependency graph and current task states. They are prompts, not automatic changes.",
     taskTrack:
-      "A parallel workflow track for this job. Tasks inside a track follow the configured workflow order, but tracks may advance independently.",
+      "A workstream is a worker-facing group of related tasks for this job. Workstreams can move in parallel, while the owner board shows one overall production phase.",
   },
   links: {
     commandCenter:
@@ -45,13 +45,13 @@ export const hoverTextCopy = {
     dashboard:
       "Return to the main Mythic Operations dashboard.",
     jobDetail:
-      "Open the full job detail page with task tracks, next actions, and event history.",
+      "Open the full job detail page with workstreams, next actions, and event history.",
     ownerOverview:
       "Owner-only read-only board for scanning every production job by customer, order, current phase, progress, and blockers.",
     production:
       "Open the production job list.",
     queue:
-      "Open this queue to see the active tasks that match its role, workflow track, or blocked status.",
+      "Open this queue to see the active tasks that match its role, workstream, or blocked status.",
     receivingQueue:
       "Open apparel receiving work: supplier-side apparel tasks, shipment checkpoints, and receipt-related blockers.",
     reporting:
@@ -79,13 +79,13 @@ export const hoverTextCopy = {
   },
   queues: {
     blocked:
-      "Blocked work ignores role and track filters so the team can quickly see everything that needs intervention.",
+      "Blocked work ignores role and workstream filters so the team can quickly see everything that needs intervention.",
     productionLead:
       "Lead-owned work usually includes approvals, estimates, scheduling decisions, and phase gates.",
     productionWorker:
       "Shop-floor queue for tasks assigned to production workers, such as screen prep, production, and finishing/QC.",
     receiving:
-      "Receiving queue is filtered to apparel-track tasks so incoming goods and supplier issues are easy to isolate.",
+      "Receiving queue is filtered to apparel workstream tasks so incoming goods and supplier issues are easy to isolate.",
     staff:
       "Staff and sourcing queue for front-office tasks that unblock production, including garment requirements and supplier ordering.",
   },
