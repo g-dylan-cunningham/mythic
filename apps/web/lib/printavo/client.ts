@@ -167,6 +167,74 @@ async function readResponseBody(response: Response) {
   return response.text();
 }
 
+async function mutatePrintavoJson<T>(
+  url: URL,
+  {
+    body,
+    method,
+    retryBaseDelayMs = 1500,
+  }: {
+    body: unknown;
+    method: "POST" | "PUT";
+    retryBaseDelayMs?: number;
+  },
+): Promise<T> {
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        cache: "no-store",
+      });
+      const responseBody = await readResponseBody(response);
+
+      if (response.ok) {
+        return responseBody as T;
+      }
+
+      const retryable = response.status === 429 || response.status >= 500;
+
+      if (!retryable || attempt >= 3) {
+        throw new PrintavoHttpError(
+          `Printavo request failed with ${response.status} ${response.statusText}.`,
+          response.status,
+          responseBody,
+          `${url.origin}${url.pathname}`,
+        );
+      }
+
+      const requestedDelay = retryAfterMs(response.headers.get("retry-after"));
+      const fallbackDelay = retryBaseDelayMs * 2 ** attempt;
+
+      await wait(requestedDelay ?? fallbackDelay);
+    } catch (error) {
+      lastError = error;
+
+      if (error instanceof PrintavoHttpError) {
+        throw error;
+      }
+
+      if (attempt >= 3) {
+        break;
+      }
+
+      await wait(retryBaseDelayMs * 2 ** attempt);
+    }
+  }
+
+  if (lastError instanceof Error) {
+    throw lastError;
+  }
+
+  throw new Error("Unknown Printavo mutation failure.");
+}
+
 export async function fetchPrintavoJson<T>(
   url: URL,
   {
@@ -234,6 +302,40 @@ export async function fetchPrintavoJson<T>(
   }
 
   throw new Error("Unknown Printavo request failure.");
+}
+
+// This function is used to update the order status of a Printavo order. It takes in the order ID, the new order status ID, and an optional retry base delay in milliseconds. It first retrieves the Printavo configuration and checks if it is valid. If not, it throws an error. Then, it constructs the URL for the API request and sets the necessary query parameters. Finally, it calls the mutatePrintavoJson function to send a PUT request to update the order status and returns the updated Printavo order.
+// IMPORTANT: mutates order status in printavo - will have customer impact
+// to be used during rampup intentionally only.
+export async function updatePrintavoOrderStatus({
+  orderId,
+  orderstatusId,
+  retryBaseDelayMs,
+}: {
+  orderId: number;
+  orderstatusId: number;
+  retryBaseDelayMs?: number;
+}) {
+  const config = getPrintavoConfig();
+
+  if (!config.ok) {
+    throw new Error(config.error);
+  }
+
+  const url = new URL(
+    `/api/${config.version}/orders/${orderId}/update_orderstatus`,
+    config.baseUrl,
+  );
+  url.searchParams.set("email", config.email);
+  url.searchParams.set("token", config.token);
+
+  return mutatePrintavoJson<PrintavoOrder>(url, {
+    body: {
+      orderstatus_id: orderstatusId,
+    },
+    method: "PUT",
+    retryBaseDelayMs,
+  });
 }
 
 export async function testPrintavoConnection(): Promise<PrintavoConnectionResult> {

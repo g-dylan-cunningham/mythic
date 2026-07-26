@@ -12,17 +12,21 @@ type SyncStatus = "running" | "succeeded" | "failed";
 
 export type PrintavoProductionSyncResult = {
   createdJobs: number;
+  eligibleOrders: number;
   existingJobs: number;
   failedOrders: Array<{
     error: string;
     printavoOrderId: number;
   }>;
-  paidOrders: number;
   pagesFetched: number;
   scannedOrders: number;
-  skippedUnpaidOrders: number;
+  skippedIneligibleOrders: number;
   syncRunId: string;
 };
+
+const productionEligibilityStatusIds = new Set([
+  56087, // Approved! - Payment Request Sent
+]);
 
 function toNumber(value: number | string | null | undefined) {
   if (typeof value === "number") {
@@ -51,6 +55,16 @@ function isPaidPrintavoOrder(order: PrintavoOrder) {
   }
 
   return false;
+}
+
+function isProductionEligiblePrintavoOrder(order: PrintavoOrder) {
+  if (isPaidPrintavoOrder(order)) {
+    return true;
+  }
+
+  const statusId = order.orderstatus?.id ?? order.orderstatus_id ?? null;
+
+  return statusId !== null && productionEligibilityStatusIds.has(statusId);
 }
 
 function customerName(order: PrintavoOrder) {
@@ -221,15 +235,18 @@ export async function runPrintavoProductionSync(
     per_page: perPage,
     product_category_key: productCategoryKey,
     retry_base_delay_ms: retryBaseDelayMs,
+    trigger_status_ids: Array.from(productionEligibilityStatusIds),
+    trigger_strategy:
+      "create production jobs when Printavo reaches payment-request-sent or is already paid",
   });
   const result: PrintavoProductionSyncResult = {
     createdJobs: 0,
+    eligibleOrders: 0,
     existingJobs: 0,
     failedOrders: [],
-    paidOrders: 0,
     pagesFetched: 0,
     scannedOrders: 0,
-    skippedUnpaidOrders: 0,
+    skippedIneligibleOrders: 0,
     syncRunId,
   };
 
@@ -260,16 +277,16 @@ export async function runPrintavoProductionSync(
         syncRunId,
       });
 
-      const paidOrders = orders.filter(isPaidPrintavoOrder);
-      result.paidOrders += paidOrders.length;
-      result.skippedUnpaidOrders += orders.length - paidOrders.length;
+      const eligibleOrders = orders.filter(isProductionEligiblePrintavoOrder);
+      result.eligibleOrders += eligibleOrders.length;
+      result.skippedIneligibleOrders += orders.length - eligibleOrders.length;
 
       const existingOrderIds = await existingProductionOrderIds(
         supabase,
-        paidOrders.map((order) => order.id),
+        eligibleOrders.map((order) => order.id),
       );
 
-      for (const order of paidOrders) {
+      for (const order of eligibleOrders) {
         const existedBeforeSync = existingOrderIds.has(order.id);
 
         try {
@@ -307,7 +324,7 @@ export async function runPrintavoProductionSync(
           : {},
       errorMessage:
         result.failedOrders.length > 0
-          ? `${result.failedOrders.length} paid Printavo order(s) failed.`
+          ? `${result.failedOrders.length} eligible Printavo order(s) failed.`
           : null,
     });
 

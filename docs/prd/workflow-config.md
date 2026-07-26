@@ -104,7 +104,8 @@ changes should require human confirmation in the POC.
 
 Examples:
 
-- If customer paid and no production job exists, suggest creating a job.
+- If the payment request / invoice-sent trigger is reached and no production
+  job exists, suggest creating a job.
 - If artwork approved, suggest opening screen prep.
 - If blank apparel received and screens/specs/estimate are ready, suggest Ready
   for Production.

@@ -25,7 +25,7 @@ export async function runManualPrintavoProductionSync() {
       retryBaseDelayMs: 5000,
     });
 
-    redirectUrl = `/reporting/printavo-sync?created=${result.createdJobs}&existing=${result.existingJobs}&scanned=${result.scannedOrders}&paid=${result.paidOrders}&syncRunId=${result.syncRunId}`;
+    redirectUrl = `/reporting/printavo-sync?created=${result.createdJobs}&existing=${result.existingJobs}&scanned=${result.scannedOrders}&eligible=${result.eligibleOrders}&syncRunId=${result.syncRunId}`;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown Printavo sync error.";

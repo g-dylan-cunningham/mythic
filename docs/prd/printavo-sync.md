@@ -50,17 +50,23 @@ First-pass policy:
 Target rule:
 
 ```txt
-If Printavo indicates customer payment received
+If Printavo reaches the mapped payment-request / invoice-sent trigger
 and no production_job exists for that Printavo order
 then create or suggest creating a production_job.
 ```
 
-Open question: confirm the exact Printavo API signal for customer payment.
+Current POC trigger:
+
+- Printavo order status ID `56087`: `Approved! - Payment Request Sent`
+- Paid orders still qualify as a fallback so later-stage orders are not missed.
+
+Open question: confirm with Cole whether this is the exact handoff point.
 Candidates:
 
-- order payment fields
-- payment records
 - status changes
+- message/payment request metadata
+- order payment fields as fallback
+- payment records as fallback
 - message/event metadata
 - existing Zapier trigger payload
 

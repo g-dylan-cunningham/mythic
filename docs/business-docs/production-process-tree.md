@@ -78,7 +78,7 @@ happen at the same time.
 
 ```mermaid
 flowchart TB
-  Start["Printavo: customer paid"]
+  Start["Printavo: payment request / invoice sent"]
   Job["Mythic production job created"]
 
   Start --> Job

@@ -17,7 +17,7 @@ export const reports: ReportDefinition[] = [
   },
   {
     description:
-      "Manual POC sync for recent paid Printavo orders into Mythic production jobs.",
+      "Manual POC sync for recent Printavo orders that reached the payment-request trigger.",
     href: "/reporting/printavo-sync",
     source: "Printavo",
     status: "Discovery",

@@ -90,9 +90,9 @@ Validation:
 Work items:
 
 - Sync order statuses.
-- Confirm customer-paid signal.
+- Confirm payment-request / invoice-sent trigger.
 - Add manual sync for one order or recent orders.
-- Create/suggest production job from paid Printavo order.
+- Create/suggest production job from eligible Printavo order.
 - Add 15-minute store-hours polling after manual flow works.
 
 Validation:

@@ -7,7 +7,7 @@ export const hoverTextCopy = {
     completeTask:
       "Mark this task complete. If the task has unmet completion dependencies, the workflow engine will stop the update.",
     manualPrintavoSync:
-      "Run a small, safe Printavo sync now. The sync stores raw payloads, records a sync run, and creates production jobs only when paid orders qualify.",
+      "Run a small, safe Printavo sync now. The sync stores raw payloads, records a sync run, and creates production jobs when orders reach the payment-request trigger.",
     markSuggestedComplete:
       "Complete this suggested milestone from the next-action panel. The same dependency checks and event logging still apply.",
     reopenTask:
@@ -33,7 +33,7 @@ export const hoverTextCopy = {
     eventTimeline:
       "Chronological audit trail for this job. Task changes, phase moves, sync events, blockers, and system actions are written here.",
     printavoSync:
-      "Open the manual Printavo sync/debug page. Useful when checking whether a paid Printavo order created or updated a Mythic job.",
+      "Open the manual Printavo sync/debug page. Useful when checking whether an eligible Printavo order created or updated a Mythic job.",
     suggestions:
       "Next actions are generated from the workflow dependency graph and current task states. They are prompts, not automatic changes.",
     taskTrack:

@@ -83,7 +83,7 @@ export default async function PrintavoProductionSyncPage({
   const created = valueOf(params.created);
   const existing = valueOf(params.existing);
   const scanned = valueOf(params.scanned);
-  const paid = valueOf(params.paid);
+  const eligible = valueOf(params.eligible);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
@@ -109,8 +109,8 @@ export default async function PrintavoProductionSyncPage({
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
             Fetches a small page of recently updated Printavo orders, stores raw
-            payloads, detects paid orders, and creates Mythic production jobs
-            idempotently.
+            payloads, detects orders that have reached the payment-request
+            trigger, and creates Mythic production jobs idempotently.
           </p>
         </header>
 
@@ -140,7 +140,7 @@ export default async function PrintavoProductionSyncPage({
             </p>
           ) : null}
 
-          {created || existing || scanned || paid ? (
+          {created || existing || scanned || eligible ? (
             <HoverText
               className="mt-4 grid gap-3 text-sm sm:grid-cols-4"
               text={hoverTextCopy.reporting.syncStats}
@@ -150,8 +150,8 @@ export default async function PrintavoProductionSyncPage({
                 <p className="mt-1 font-mono">{scanned ?? 0}</p>
               </div>
               <div className="rounded-md border border-neutral-800 bg-neutral-950 p-3">
-                <p className="text-neutral-500">Paid orders</p>
-                <p className="mt-1 font-mono">{paid ?? 0}</p>
+                <p className="text-neutral-500">Eligible orders</p>
+                <p className="mt-1 font-mono">{eligible ?? 0}</p>
               </div>
               <div className="rounded-md border border-neutral-800 bg-neutral-950 p-3">
                 <p className="text-neutral-500">Jobs created</p>
