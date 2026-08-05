@@ -12,6 +12,7 @@ import {
   type OrgDepartment,
   type Profile,
   canManageUsers,
+  canServeAsDepartmentManager,
   canUseOperations,
   isDepartmentManager,
 } from "@/lib/auth/roles";
@@ -48,6 +49,7 @@ type ManagerRow = {
   department: OrgDepartment | null;
   email: string | null;
   full_name: string | null;
+  role: string;
 };
 
 const claimableDepartments = ORG_DEPARTMENTS.filter(
@@ -174,8 +176,8 @@ export default async function OwnershipQueuePage({
       .returns<TaskJobRow[]>(),
     supabase
       .from("profiles")
-      .select("id,authority_level,department,email,full_name")
-      .eq("role", "staff")
+      .select("id,authority_level,department,email,full_name,role")
+      .in("role", ["owner", "admin", "staff"])
       .eq("is_active", true)
       .eq("department", department)
       .order("full_name", { ascending: true })
@@ -187,7 +189,10 @@ export default async function OwnershipQueuePage({
   }
 
   const departmentManagers = (managerRows ?? []).filter((manager) =>
-    isDepartmentManager(manager.authority_level),
+    canServeAsDepartmentManager(
+      manager.role as Parameters<typeof canServeAsDepartmentManager>[0],
+      manager.authority_level,
+    ),
   );
   const managersById = new Map(
     departmentManagers.map((manager) => [manager.id, manager]),

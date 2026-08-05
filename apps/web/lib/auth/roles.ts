@@ -47,6 +47,16 @@ export function isDepartmentManager(
   );
 }
 
+export function canServeAsDepartmentManager(
+  role: AppRole | null | undefined,
+  authorityLevel: AuthorityLevel | null | undefined,
+) {
+  return (
+    (role === "owner" || role === "admin" || role === "staff") &&
+    isDepartmentManager(authorityLevel)
+  );
+}
+
 export function isSeniorDepartmentMember(
   authorityLevel: AuthorityLevel | null | undefined,
 ) {

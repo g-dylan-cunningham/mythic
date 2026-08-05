@@ -45,6 +45,11 @@ function viewLinks(profile: HeaderProfile | null) {
     { href: "/dashboard", label: "Dashboard", show: true },
     { href: "/production", label: "Production", show: canUseOperations(role) },
     {
+      href: "/production/workbench",
+      label: "Workbench",
+      show: canUseOperations(role),
+    },
+    {
       href: "/production/command-center",
       label: "Command center",
       show: canUseOperations(role),

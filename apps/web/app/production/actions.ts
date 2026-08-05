@@ -6,6 +6,7 @@ import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
   canManageProduction,
   canManageUsers,
+  canServeAsDepartmentManager,
   canUseOperations,
   canWorkProductionTasks,
   isDepartmentManager,
@@ -489,10 +490,14 @@ export async function updateProductionTaskOwningManager(formData: FormData) {
     if (
       error ||
       !data ||
-      data.role !== "staff" ||
+      !canServeAsDepartmentManager(
+        data.role as Parameters<typeof canServeAsDepartmentManager>[0],
+        data.authority_level as Parameters<
+          typeof canServeAsDepartmentManager
+        >[1],
+      ) ||
       !data.is_active ||
-      data.department !== department ||
-      !isDepartmentManager(data.authority_level as Profile["authority_level"])
+      data.department !== department
     ) {
       redirect(`/production/${jobId}`);
     }

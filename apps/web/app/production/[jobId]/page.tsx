@@ -26,12 +26,18 @@ import {
   ORG_DEPARTMENTS,
   canManageProduction,
   canManageUsers,
+  canServeAsDepartmentManager,
   canUseOperations,
   canViewOwnerProductionOverview,
   canWorkProductionTasks,
   isDepartmentManager,
 } from "@/lib/auth/roles";
 import { suggestNextActions } from "@/lib/production-workflow/engine";
+import {
+  labelForTrack,
+  phasesForTask,
+  trackLabels,
+} from "@/lib/production-workflow/task-display";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
 
@@ -131,14 +137,6 @@ type WorkflowDependencyRow = {
   step_key: string;
 };
 
-const trackLabels: Record<string, string> = {
-  apparel: "Apparel",
-  artwork: "Artwork",
-  customer_fulfillment: "Customer Fulfillment",
-  production: "Production",
-  production_prep: "Production Prep",
-};
-
 const selfAssignedTaskClass =
   "border-l-4 border-l-emerald-400 bg-emerald-400/10 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.18)]";
 
@@ -149,34 +147,6 @@ function selfAssignedChip() {
     </span>
   );
 }
-
-const taskPhaseLabels: Record<string, string[]> = {
-  "apparel.confirm_garment_requirements": ["Needs sourcing"],
-  "apparel.build_supplier_cart": ["Needs sourcing"],
-  "apparel.approve_cart": ["Needs sourcing"],
-  "apparel.order_apparel": ["Needs sourcing", "Awaiting goods"],
-  "apparel.apparel_shipped": ["Awaiting goods"],
-  "apparel.apparel_received": ["Goods received"],
-  "art.confirm_artwork_needed": ["Needs sourcing"],
-  "art.create_revise_artwork": ["Needs sourcing"],
-  "art.send_artwork_approval": ["Needs sourcing"],
-  "art.artwork_approved": ["Ready for production"],
-  "art.ready_to_burn_screens": ["Ready for production"],
-  "prep.burn_screens": ["Ready for production"],
-  "prep.confirm_print_locations": ["Ready for production"],
-  "prep.confirm_ink_color_count": ["Ready for production"],
-  "prep.confirm_garment_handling": ["Ready for production"],
-  "prep.confirm_finishing_requirements": ["Ready for production"],
-  "prep.estimate_difficulty_time": ["Ready for production"],
-  "prep.assign_press_day": ["Scheduled"],
-  "production.ready_for_production": ["Ready for production"],
-  "production.in_production": ["In production"],
-  "production.finishing_qc": ["Finishing / QC"],
-  "production.production_complete": ["Production complete"],
-  "fulfillment.ready_inventory": ["After production complete"],
-  "fulfillment.shipped_picked_up": ["After production complete"],
-  "fulfillment.received_by_customer": ["After production complete"],
-};
 
 const statusClasses: Record<string, string> = {
   blocked: "border-red-400/30 bg-red-400/10 text-red-100",
@@ -233,10 +203,6 @@ function formatDateTime(value: string | null) {
   }).format(new Date(value));
 }
 
-function labelForTrack(track: string) {
-  return trackLabels[track] ?? track.replaceAll("_", " ");
-}
-
 function labelize(value: string | null | undefined) {
   return value ? value.replaceAll("_", " ") : "not assigned";
 }
@@ -267,10 +233,6 @@ function eligibleAssigneesForTask(
   }
 
   return departmentEmployees;
-}
-
-function phasesForTask(workflowStepKey: string) {
-  return taskPhaseLabels[workflowStepKey] ?? ["Phase mapping pending"];
 }
 
 function groupedTasks(tasks: ProductionTaskRow[]) {
@@ -693,12 +655,14 @@ export default async function ProductionJobDetailPage({
                           : undefined;
                         const eligibleManagers = (staffProfiles ?? []).filter(
                           (staffProfile) =>
-                            staffProfile.role === "staff" &&
                             staffProfile.department === task.owning_department &&
-                            isDepartmentManager(
-                              staffProfile.authority_level as Parameters<
-                                typeof isDepartmentManager
+                            canServeAsDepartmentManager(
+                              staffProfile.role as Parameters<
+                                typeof canServeAsDepartmentManager
                               >[0],
+                              staffProfile.authority_level as Parameters<
+                                typeof canServeAsDepartmentManager
+                              >[1],
                             ),
                         );
                         const eligibleAssignees = eligibleAssigneesForTask(

@@ -8,7 +8,7 @@ import {
   type AuthorityLevel,
   type OrgDepartment,
   canManageUsers,
-  isDepartmentManager,
+  canServeAsDepartmentManager,
 } from "@/lib/auth/roles";
 import { createClient } from "@/utils/supabase/server";
 
@@ -95,7 +95,7 @@ export default async function OwnershipAdminPage() {
     supabase
       .from("profiles")
       .select("id,authority_level,department,email,full_name,is_active,role")
-      .eq("role", "staff")
+      .in("role", ["owner", "admin", "staff"])
       .eq("is_active", true)
       .order("department", { ascending: true })
       .order("full_name", { ascending: true })
@@ -109,7 +109,10 @@ export default async function OwnershipAdminPage() {
   }
 
   const managerOptions = (managers ?? []).filter((manager) =>
-    isDepartmentManager(manager.authority_level),
+    canServeAsDepartmentManager(
+      manager.role as Parameters<typeof canServeAsDepartmentManager>[0],
+      manager.authority_level,
+    ),
   );
   const managersById = new Map(
     managerOptions.map((manager) => [manager.id, manager]),
