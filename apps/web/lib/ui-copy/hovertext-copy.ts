@@ -8,8 +8,6 @@ export const hoverTextCopy = {
       "Mark this task complete. If the task has unmet completion dependencies, the workflow engine will stop the update.",
     manualPrintavoSync:
       "Run a small, safe Printavo sync now. The sync stores raw payloads, records a sync run, and creates production jobs when orders reach the payment-request trigger.",
-    markSuggestedComplete:
-      "Complete this suggested milestone from the next-action panel. The same dependency checks and event logging still apply.",
     reopenTask:
       "Reopen this completed task and clear its completion timestamp. Use this when the task was marked complete too early or needs more work.",
     reopenAndBlockTask:
@@ -25,7 +23,7 @@ export const hoverTextCopy = {
   },
   dashboard: {
     production:
-      "Open the production workflow area: jobs, command center, role queues, task checklists, suggestions, and event history.",
+      "Open the production workflow area: jobs, command center, role queues, task checklists, and event history.",
     reports:
       "Open vendor and operational reports, including Printavo sync diagnostics and reconciliation tools.",
   },
@@ -34,8 +32,6 @@ export const hoverTextCopy = {
       "Chronological audit trail for this job. Task changes, phase moves, sync events, blockers, and system actions are written here.",
     printavoSync:
       "Open the manual Printavo sync/debug page. Useful when checking whether an eligible Printavo order created or updated a Mythic job.",
-    suggestions:
-      "Next actions are generated from the workflow dependency graph and current task states. They are prompts, not automatic changes.",
     taskTrack:
       "A workstream is a worker-facing group of related tasks for this job. Workstreams can move in parallel, while the owner board shows one overall production phase.",
   },
@@ -51,27 +47,21 @@ export const hoverTextCopy = {
     production:
       "Open the production job list.",
     queue:
-      "Open this queue to see the active tasks that match its role, workstream, or blocked status.",
-    receivingQueue:
-      "Open apparel receiving work: supplier-side apparel tasks, shipment checkpoints, and receipt-related blockers.",
+      "Open this queue to see the active tasks that match its status filter.",
     reporting:
       "Return to the reporting hub.",
     blockedQueue:
-      "Open all blocked tasks across production, sourcing, receiving, and fulfillment.",
+      "Open all blocked tasks across the workflow.",
   },
   production: {
     blockedBadge:
       "This job has one or more blocked tasks. Open the job to see blocker reasons and unblock when resolved.",
     commandCenterCard:
       "Start here for daily production lead review: queue health, due dates, blocked work, and estimate pressure.",
-    customerFulfillmentQueue:
-      "Customer fulfillment covers the post-production handoff: ready inventory, shipped or picked up, and received by customer.",
     estimate:
       "Estimated production effort for active jobs. These values are rough planning inputs until time tracking is added.",
     ownerJobCard:
       "Open this job to inspect its full task checklist, blocker reasons, suggested next actions, and event timeline.",
-    receivingCard:
-      "Apparel-side queue for confirming requirements, building/approving carts, ordering, shipment, and receipt.",
     taskProgress:
       "Completed task count compared with total generated tasks for this production job.",
     watchList:
@@ -80,14 +70,6 @@ export const hoverTextCopy = {
   queues: {
     blocked:
       "Blocked work ignores role and workstream filters so the team can quickly see everything that needs intervention.",
-    productionLead:
-      "Lead-owned work usually includes approvals, estimates, scheduling decisions, and phase gates.",
-    productionWorker:
-      "Shop-floor queue for tasks assigned to production workers, such as screen prep, production, and finishing/QC.",
-    receiving:
-      "Receiving queue is filtered to apparel workstream tasks so incoming goods and supplier issues are easy to isolate.",
-    staff:
-      "Staff and sourcing queue for front-office tasks that unblock production, including garment requirements and supplier ordering.",
   },
   reporting: {
     reportCard:

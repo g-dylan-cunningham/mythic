@@ -14,7 +14,7 @@ export async function getCurrentProfile() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id,email,full_name,role,is_active")
+    .select("id,email,full_name,role,department,authority_level,is_active")
     .eq("id", user.id)
     .single<Profile>();
 

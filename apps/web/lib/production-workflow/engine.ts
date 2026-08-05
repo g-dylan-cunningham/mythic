@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { AppRole } from "@/lib/auth/roles";
+import type { AppRole, OrgDepartment } from "@/lib/auth/roles";
 
 type JsonObject = Record<string, unknown>;
 
@@ -17,6 +17,21 @@ export type ProductionTaskStatus =
   | "complete"
   | "cancelled"
   | "skipped";
+
+export type ProductionTaskCollaboratorRole =
+  | "watcher"
+  | "contributor"
+  | "reviewer"
+  | "manager_observer";
+
+export type ProductionTaskCommentType =
+  | "comment"
+  | "blocker"
+  | "resolution"
+  | "handoff"
+  | "completion_note"
+  | "internal_note"
+  | "assignment_note";
 
 export type PrintavoOrderForProduction = {
   amount_paid?: number | string | null;
@@ -62,6 +77,7 @@ type WorkflowStep = {
   is_required: boolean;
   is_active: boolean;
   default_assigned_role: AppRole | null;
+  default_department: OrgDepartment | null;
   suggested_prompt: string | null;
 };
 
@@ -119,7 +135,11 @@ type ProductionTask = {
   status: ProductionTaskStatus;
   assigned_role: AppRole | null;
   assigned_user_id: string | null;
+  owning_department: OrgDepartment | null;
   blocked_reason: string | null;
+  outcome_key?: string | null;
+  outcome_label_snapshot?: string | null;
+  outcome_note?: string | null;
 };
 
 type EventInput = {
@@ -152,6 +172,41 @@ type TaskMutationInput = {
   actorUserId: string;
   source?: WorkflowEventSource;
   note?: string | null;
+};
+
+export type ArtworkNeededOutcome =
+  | "artwork_needed"
+  | "artwork_not_needed"
+  | "customer_followup_needed";
+
+const artworkNeededOutcomeLabels: Record<ArtworkNeededOutcome, string> = {
+  artwork_needed: "Artwork needed",
+  artwork_not_needed: "Artwork not needed",
+  customer_followup_needed: "Customer follow-up needed",
+};
+
+const artworkNotNeededSkippedSteps = [
+  "art.create_revise_artwork",
+  "art.send_artwork_approval",
+  "art.artwork_approved",
+];
+
+type ProductionTaskComment = {
+  id: string;
+  production_task_id: string;
+  production_job_id: string;
+  author_user_id: string | null;
+  comment_type: ProductionTaskCommentType;
+  body: string;
+};
+
+type ProductionTaskCollaborator = {
+  id: string;
+  production_task_id: string;
+  user_id: string;
+  collaborator_role: ProductionTaskCollaboratorRole;
+  added_by_user_id: string | null;
+  removed_at: string | null;
 };
 
 export type ProductionWorkflowSuggestion = {
@@ -261,7 +316,7 @@ async function getWorkflowSteps(
   const { data, error } = await supabase
     .from("workflow_steps")
     .select(
-      "id,workflow_definition_id,key,label,step_type,track,sort_order,is_required,is_active,default_assigned_role,suggested_prompt",
+      "id,workflow_definition_id,key,label,step_type,track,sort_order,is_required,is_active,default_assigned_role,default_department,suggested_prompt",
     )
     .eq("workflow_definition_id", workflowDefinitionId)
     .eq("is_active", true)
@@ -305,7 +360,7 @@ async function getProductionTask(
   const { data, error } = await supabase
     .from("production_tasks")
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason,outcome_key,outcome_label_snapshot,outcome_note",
     )
     .eq("id", taskId)
     .single<ProductionTask>();
@@ -330,7 +385,7 @@ async function getJobTasks(
   const { data, error } = await supabase
     .from("production_tasks")
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
     )
     .eq("production_job_id", productionJobId)
     .returns<ProductionTask[]>();
@@ -423,6 +478,68 @@ export async function writeProductionJobEvent(
   return data;
 }
 
+export async function addTaskComment(
+  supabase: SupabaseClient,
+  input: {
+    actorUserId: string;
+    body: string;
+    commentType?: ProductionTaskCommentType;
+    metadata?: JsonObject;
+    source?: WorkflowEventSource;
+    taskId: string;
+  },
+) {
+  const body = input.body.trim();
+
+  if (!body) {
+    throw new ProductionWorkflowError(
+      "Task comment body is required.",
+      "task_comment_body_required",
+      { taskId: input.taskId },
+    );
+  }
+
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const commentType = input.commentType ?? "comment";
+  const { data: comment, error } = await supabase
+    .from("production_task_comments")
+    .insert({
+      production_task_id: task.id,
+      production_job_id: task.production_job_id,
+      author_user_id: input.actorUserId,
+      comment_type: commentType,
+      body,
+      metadata: input.metadata ?? {},
+    })
+    .select(
+      "id,production_task_id,production_job_id,author_user_id,comment_type,body",
+    )
+    .single<ProductionTaskComment>();
+
+  assertNoError(error, "add_task_comment");
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_comment_added",
+    source: input.source ?? "manual",
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: body,
+    metadata: {
+      comment_id: comment?.id ?? null,
+      comment_type: commentType,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+      ...(input.metadata ?? {}),
+    },
+  });
+
+  return comment;
+}
+
 export async function generateTasksForWorkflow(
   supabase: SupabaseClient,
   input: GenerateTasksInput,
@@ -439,8 +556,10 @@ export async function generateTasksForWorkflow(
       track_snapshot: step.track,
       status: "open" satisfies ProductionTaskStatus,
       assigned_role: step.default_assigned_role,
+      owning_department: step.default_department,
       metadata: {
         generated_from_workflow_step_id: step.id,
+        default_department_snapshot: step.default_department,
       },
     }));
 
@@ -455,7 +574,7 @@ export async function generateTasksForWorkflow(
       ignoreDuplicates: false,
     })
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
     )
     .returns<ProductionTask[]>();
 
@@ -474,6 +593,284 @@ export async function generateTasksForWorkflow(
   });
 
   return data ?? [];
+}
+
+export async function assignTask(
+  supabase: SupabaseClient,
+  input: TaskMutationInput & { assignedUserId: string },
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const assignedAt = new Date().toISOString();
+  const eventType = task.assigned_user_id ? "task_reassigned" : "task_assigned";
+  const { data: updatedTask, error } = await supabase
+    .from("production_tasks")
+    .update({
+      assigned_user_id: input.assignedUserId,
+      assigned_by_user_id: input.actorUserId,
+      assigned_at: assignedAt,
+      status: task.status === "open" ? "in_progress" : task.status,
+    })
+    .eq("id", task.id)
+    .select(
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
+    )
+    .single<ProductionTask>();
+
+  assertNoError(error, "assign_task");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "assignment_note",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType,
+    source: input.source ?? "manual",
+    fromStateKey: task.assigned_user_id,
+    fromStateLabel: task.assigned_user_id,
+    toStateKey: input.assignedUserId,
+    toStateLabel: input.assignedUserId,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      assigned_at: assignedAt,
+      from_user_id: task.assigned_user_id,
+      to_user_id: input.assignedUserId,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return updatedTask;
+}
+
+export async function unassignTask(
+  supabase: SupabaseClient,
+  input: TaskMutationInput,
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const { data: updatedTask, error } = await supabase
+    .from("production_tasks")
+    .update({
+      assigned_user_id: null,
+      assigned_by_user_id: input.actorUserId,
+      assigned_at: null,
+      status: task.status === "in_progress" ? "open" : task.status,
+    })
+    .eq("id", task.id)
+    .select(
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
+    )
+    .single<ProductionTask>();
+
+  assertNoError(error, "unassign_task");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "assignment_note",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_unassigned",
+    source: input.source ?? "manual",
+    fromStateKey: task.assigned_user_id,
+    fromStateLabel: task.assigned_user_id,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      from_user_id: task.assigned_user_id,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return updatedTask;
+}
+
+export async function changeTaskOwningDepartment(
+  supabase: SupabaseClient,
+  input: TaskMutationInput & { owningDepartment: OrgDepartment },
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const { data: updatedTask, error } = await supabase
+    .from("production_tasks")
+    .update({
+      owning_department: input.owningDepartment,
+    })
+    .eq("id", task.id)
+    .select(
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
+    )
+    .single<ProductionTask>();
+
+  assertNoError(error, "change_task_owning_department");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "handoff",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_department_changed",
+    source: input.source ?? "manual",
+    fromStateKey: task.owning_department,
+    fromStateLabel: task.owning_department,
+    toStateKey: input.owningDepartment,
+    toStateLabel: input.owningDepartment,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      from_department: task.owning_department,
+      to_department: input.owningDepartment,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return updatedTask;
+}
+
+export async function addTaskCollaborator(
+  supabase: SupabaseClient,
+  input: TaskMutationInput & {
+    collaboratorRole: ProductionTaskCollaboratorRole;
+    userId: string;
+  },
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const { data: collaborator, error } = await supabase
+    .from("production_task_collaborators")
+    .insert({
+      production_task_id: task.id,
+      user_id: input.userId,
+      collaborator_role: input.collaboratorRole,
+      added_by_user_id: input.actorUserId,
+      metadata: input.note ? { note: input.note } : {},
+    })
+    .select(
+      "id,production_task_id,user_id,collaborator_role,added_by_user_id,removed_at",
+    )
+    .single<ProductionTaskCollaborator>();
+
+  assertNoError(error, "add_task_collaborator");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "internal_note",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_collaborator_added",
+    source: input.source ?? "manual",
+    toStateKey: input.userId,
+    toStateLabel: input.collaboratorRole,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      collaborator_id: collaborator?.id ?? null,
+      collaborator_user_id: input.userId,
+      collaborator_role: input.collaboratorRole,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return collaborator;
+}
+
+export async function removeTaskCollaborator(
+  supabase: SupabaseClient,
+  input: TaskMutationInput & {
+    collaboratorId: string;
+  },
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const removedAt = new Date().toISOString();
+  const { data: collaborator, error } = await supabase
+    .from("production_task_collaborators")
+    .update({ removed_at: removedAt })
+    .eq("id", input.collaboratorId)
+    .eq("production_task_id", task.id)
+    .select(
+      "id,production_task_id,user_id,collaborator_role,added_by_user_id,removed_at",
+    )
+    .single<ProductionTaskCollaborator>();
+
+  assertNoError(error, "remove_task_collaborator");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "internal_note",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_collaborator_removed",
+    source: input.source ?? "manual",
+    fromStateKey: collaborator?.user_id ?? null,
+    fromStateLabel: collaborator?.collaborator_role ?? null,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      collaborator_id: collaborator?.id ?? input.collaboratorId,
+      collaborator_user_id: collaborator?.user_id ?? null,
+      collaborator_role: collaborator?.collaborator_role ?? null,
+      removed_at: removedAt,
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+    },
+  });
+
+  return collaborator;
 }
 
 export async function createProductionJobFromPrintavoOrder(
@@ -617,11 +1014,21 @@ export async function completeTask(
     })
     .eq("id", task.id)
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
     )
     .single<ProductionTask>();
 
   assertNoError(error, "complete_task");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "completion_note",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
 
   await writeProductionJobEvent(supabase, {
     productionJobId: task.production_job_id,
@@ -645,9 +1052,148 @@ export async function completeTask(
   return updatedTask;
 }
 
+export async function resolveArtworkNeededDecision(
+  supabase: SupabaseClient,
+  input: TaskMutationInput & { outcomeKey: ArtworkNeededOutcome },
+) {
+  const task = await getProductionTask(supabase, input.taskId);
+
+  if (task.workflow_step_key !== "art.confirm_artwork_needed") {
+    throw new ProductionWorkflowError(
+      "Task does not support the artwork needed decision.",
+      "unsupported_task_decision",
+      {
+        taskId: task.id,
+        workflowStepKey: task.workflow_step_key,
+      },
+    );
+  }
+
+  const job = await getProductionJob(supabase, task.production_job_id);
+  const outcomeLabel = artworkNeededOutcomeLabels[input.outcomeKey];
+  const recordedAt = new Date().toISOString();
+  const nextStatus =
+    input.outcomeKey === "customer_followup_needed"
+      ? ("blocked" satisfies ProductionTaskStatus)
+      : ("complete" satisfies ProductionTaskStatus);
+  const { data: updatedTask, error } = await supabase
+    .from("production_tasks")
+    .update({
+      status: nextStatus,
+      blocked_reason:
+        input.outcomeKey === "customer_followup_needed"
+          ? input.note || outcomeLabel
+          : null,
+      started_at: recordedAt,
+      completed_at:
+        input.outcomeKey === "customer_followup_needed" ? null : recordedAt,
+      completed_by:
+        input.outcomeKey === "customer_followup_needed"
+          ? null
+          : input.actorUserId,
+      outcome_key: input.outcomeKey,
+      outcome_label_snapshot: outcomeLabel,
+      outcome_note: input.note || null,
+      outcome_recorded_at: recordedAt,
+      outcome_recorded_by: input.actorUserId,
+    })
+    .eq("id", task.id)
+    .select(
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason,outcome_key,outcome_label_snapshot,outcome_note",
+    )
+    .single<ProductionTask>();
+
+  assertNoError(error, "resolve_artwork_needed_decision");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType:
+        input.outcomeKey === "customer_followup_needed"
+          ? "blocker"
+          : "completion_note",
+      source: input.source,
+      taskId: task.id,
+      metadata: {
+        outcome_key: input.outcomeKey,
+        outcome_label: outcomeLabel,
+      },
+    });
+  }
+
+  await writeProductionJobEvent(supabase, {
+    productionJobId: task.production_job_id,
+    productionTaskId: task.id,
+    actorUserId: input.actorUserId,
+    eventType: "task_decision_recorded",
+    source: input.source ?? "manual",
+    fromStateKey: task.outcome_key ?? null,
+    fromStateLabel: task.outcome_label_snapshot ?? null,
+    toStateKey: input.outcomeKey,
+    toStateLabel: outcomeLabel,
+    workflowDefinitionId: job.workflow_definition_id,
+    workflowVersion: job.workflow_version,
+    note: input.note,
+    metadata: {
+      workflow_step_key: task.workflow_step_key,
+      label_snapshot: task.label_snapshot,
+      resulting_task_status: nextStatus,
+    },
+  });
+
+  if (input.outcomeKey === "artwork_not_needed") {
+    const { data: skippedTasks, error: skippedTasksError } = await supabase
+      .from("production_tasks")
+      .update({
+        status: "skipped" satisfies ProductionTaskStatus,
+        blocked_reason: null,
+        completed_at: recordedAt,
+        completed_by: input.actorUserId,
+        outcome_key: "skipped_by_artwork_not_needed",
+        outcome_label_snapshot: "Skipped because artwork not needed",
+        outcome_note: input.note || null,
+        outcome_recorded_at: recordedAt,
+        outcome_recorded_by: input.actorUserId,
+      })
+      .eq("production_job_id", task.production_job_id)
+      .in("workflow_step_key", artworkNotNeededSkippedSteps)
+      .not("status", "in", "(complete,cancelled,skipped)")
+      .select("id,workflow_step_key,label_snapshot")
+      .returns<Array<{ id: string; label_snapshot: string; workflow_step_key: string }>>();
+
+    assertNoError(skippedTasksError, "skip_artwork_tasks_not_needed");
+
+    for (const skippedTask of skippedTasks ?? []) {
+      await writeProductionJobEvent(supabase, {
+        productionJobId: task.production_job_id,
+        productionTaskId: skippedTask.id,
+        actorUserId: input.actorUserId,
+        eventType: "task_skipped_by_decision",
+        source: "system",
+        toStateKey: "skipped",
+        toStateLabel: "Skipped",
+        workflowDefinitionId: job.workflow_definition_id,
+        workflowVersion: job.workflow_version,
+        note: input.note,
+        metadata: {
+          decision_task_id: task.id,
+          decision_step_key: task.workflow_step_key,
+          outcome_key: input.outcomeKey,
+          outcome_label: outcomeLabel,
+          workflow_step_key: skippedTask.workflow_step_key,
+          label_snapshot: skippedTask.label_snapshot,
+        },
+      });
+    }
+  }
+
+  return updatedTask;
+}
+
 export async function blockTask(
   supabase: SupabaseClient,
-  input: TaskMutationInput & { reason: string },
+  input: TaskMutationInput & { reason?: string | null },
 ) {
   const task = await getProductionTask(supabase, input.taskId);
   const job = await getProductionJob(supabase, task.production_job_id);
@@ -655,17 +1201,27 @@ export async function blockTask(
     .from("production_tasks")
     .update({
       status: "blocked" satisfies ProductionTaskStatus,
-      blocked_reason: input.reason,
+      blocked_reason: input.reason || null,
       completed_at: null,
       completed_by: null,
     })
     .eq("id", task.id)
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
     )
     .single<ProductionTask>();
 
   assertNoError(error, "block_task");
+
+  if (input.reason) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.reason,
+      commentType: "blocker",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
 
   await writeProductionJobEvent(supabase, {
     productionJobId: task.production_job_id,
@@ -679,7 +1235,7 @@ export async function blockTask(
     toStateLabel: "Blocked",
     workflowDefinitionId: job.workflow_definition_id,
     workflowVersion: job.workflow_version,
-    reason: input.reason,
+    reason: input.reason || null,
     note: input.note,
     metadata: {
       workflow_step_key: task.workflow_step_key,
@@ -703,14 +1259,29 @@ export async function reopenTask(
       blocked_reason: null,
       completed_at: null,
       completed_by: null,
+      outcome_key: null,
+      outcome_label_snapshot: null,
+      outcome_note: null,
+      outcome_recorded_at: null,
+      outcome_recorded_by: null,
     })
     .eq("id", task.id)
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason,outcome_key,outcome_label_snapshot,outcome_note",
     )
     .single<ProductionTask>();
 
   assertNoError(error, "reopen_task");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "resolution",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
 
   await writeProductionJobEvent(supabase, {
     productionJobId: task.production_job_id,
@@ -728,8 +1299,64 @@ export async function reopenTask(
     metadata: {
       workflow_step_key: task.workflow_step_key,
       label_snapshot: task.label_snapshot,
+      cleared_outcome_key: task.outcome_key ?? null,
+      cleared_outcome_label: task.outcome_label_snapshot ?? null,
     },
   });
+
+  if (
+    task.workflow_step_key === "art.confirm_artwork_needed" &&
+    task.outcome_key === "artwork_not_needed"
+  ) {
+    const restoredAt = new Date().toISOString();
+    const { data: restoredTasks, error: restoredTasksError } = await supabase
+      .from("production_tasks")
+      .update({
+        status: "open" satisfies ProductionTaskStatus,
+        blocked_reason: null,
+        completed_at: null,
+        completed_by: null,
+        outcome_key: null,
+        outcome_label_snapshot: null,
+        outcome_note: null,
+        outcome_recorded_at: null,
+        outcome_recorded_by: null,
+      })
+      .eq("production_job_id", task.production_job_id)
+      .in("workflow_step_key", artworkNotNeededSkippedSteps)
+      .eq("status", "skipped")
+      .eq("outcome_key", "skipped_by_artwork_not_needed")
+      .select("id,workflow_step_key,label_snapshot")
+      .returns<Array<{ id: string; label_snapshot: string; workflow_step_key: string }>>();
+
+    assertNoError(restoredTasksError, "restore_artwork_tasks_after_decision_reopen");
+
+    for (const restoredTask of restoredTasks ?? []) {
+      await writeProductionJobEvent(supabase, {
+        productionJobId: task.production_job_id,
+        productionTaskId: restoredTask.id,
+        actorUserId: input.actorUserId,
+        eventType: "task_restored_by_decision_reopen",
+        source: "system",
+        fromStateKey: "skipped",
+        fromStateLabel: "Skipped",
+        toStateKey: "open",
+        toStateLabel: "Open",
+        workflowDefinitionId: job.workflow_definition_id,
+        workflowVersion: job.workflow_version,
+        note: input.note,
+        metadata: {
+          decision_task_id: task.id,
+          decision_step_key: task.workflow_step_key,
+          prior_outcome_key: task.outcome_key,
+          prior_outcome_label: task.outcome_label_snapshot,
+          restored_at: restoredAt,
+          workflow_step_key: restoredTask.workflow_step_key,
+          label_snapshot: restoredTask.label_snapshot,
+        },
+      });
+    }
+  }
 
   return updatedTask;
 }
@@ -750,11 +1377,21 @@ export async function unblockTask(
     })
     .eq("id", task.id)
     .select(
-      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason",
+      "id,production_job_id,workflow_step_id,workflow_step_key,workflow_version,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,owning_department,blocked_reason",
     )
     .single<ProductionTask>();
 
   assertNoError(error, "unblock_task");
+
+  if (input.note) {
+    await addTaskComment(supabase, {
+      actorUserId: input.actorUserId,
+      body: input.note,
+      commentType: "resolution",
+      source: input.source,
+      taskId: task.id,
+    });
+  }
 
   await writeProductionJobEvent(supabase, {
     productionJobId: task.production_job_id,
@@ -941,6 +1578,9 @@ export async function suggestNextActions(
   supabase: SupabaseClient,
   productionJobId: string,
 ): Promise<ProductionWorkflowSuggestion[]> {
+  // TODO: Revisit or remove this legacy suggestion engine. The task-level UI now
+  // owns most direct actions, and the job detail sidebar may become a read-only
+  // "Needs attention" summary instead of a second action surface.
   const job = await getProductionJob(supabase, productionJobId);
   const [steps, tasks, dependencies] = await Promise.all([
     getWorkflowSteps(supabase, job.workflow_definition_id),

@@ -258,7 +258,7 @@ alter table public.printavo_status_mappings enable row level security;
 create policy "Operations users can read product categories"
 on public.product_categories for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Owners and admins can manage product categories"
 on public.product_categories for all
@@ -269,7 +269,7 @@ with check (public.current_app_role()::text in ('owner', 'admin'));
 create policy "Operations users can read workflow definitions"
 on public.workflow_definitions for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Owners and admins can manage workflow definitions"
 on public.workflow_definitions for all
@@ -280,7 +280,7 @@ with check (public.current_app_role()::text in ('owner', 'admin'));
 create policy "Operations users can read workflow steps"
 on public.workflow_steps for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Owners and admins can manage workflow steps"
 on public.workflow_steps for all
@@ -291,7 +291,7 @@ with check (public.current_app_role()::text in ('owner', 'admin'));
 create policy "Operations users can read workflow dependencies"
 on public.workflow_dependencies for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Owners and admins can manage workflow dependencies"
 on public.workflow_dependencies for all
@@ -302,7 +302,7 @@ with check (public.current_app_role()::text in ('owner', 'admin'));
 create policy "Operations users can read workflow transitions"
 on public.workflow_transitions for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Owners and admins can manage workflow transitions"
 on public.workflow_transitions for all
@@ -313,52 +313,52 @@ with check (public.current_app_role()::text in ('owner', 'admin'));
 create policy "Operations users can read production jobs"
 on public.production_jobs for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
-create policy "Owners admins and leads can manage production jobs"
+create policy "Internal users can manage production jobs"
 on public.production_jobs for all
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'production_lead'))
-with check (public.current_app_role()::text in ('owner', 'admin', 'production_lead'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'))
+with check (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Operations users can read production tasks"
 on public.production_tasks for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
-create policy "Owners admins and leads can manage production tasks"
+create policy "Internal users can manage production tasks"
 on public.production_tasks for all
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'production_lead'))
-with check (public.current_app_role()::text in ('owner', 'admin', 'production_lead'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'))
+with check (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Workers can update assigned production tasks"
 on public.production_tasks for update
 to authenticated
 using (
-  public.current_app_role()::text = 'production_worker'
+  public.current_app_role()::text = 'staff'
   and assigned_user_id = auth.uid()
 )
 with check (
-  public.current_app_role()::text = 'production_worker'
+  public.current_app_role()::text = 'staff'
   and assigned_user_id = auth.uid()
 );
 
 create policy "Operations users can read production job events"
 on public.production_job_events for select
 to authenticated
-using (public.current_app_role()::text in ('owner', 'admin', 'staff', 'production_lead', 'production_worker'));
+using (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
-create policy "Owners admins and leads can create production job events"
+create policy "Internal users can create production job events"
 on public.production_job_events for insert
 to authenticated
-with check (public.current_app_role()::text in ('owner', 'admin', 'production_lead'));
+with check (public.current_app_role()::text in ('owner', 'admin', 'staff'));
 
 create policy "Workers can create assigned task events"
 on public.production_job_events for insert
 to authenticated
 with check (
-  public.current_app_role()::text = 'production_worker'
+  public.current_app_role()::text = 'staff'
   and actor_user_id = auth.uid()
 );
 
@@ -444,36 +444,36 @@ select
 from workflow
 cross join (
   values
-    ('phase.needs_sourcing', 'Needs sourcing', 'phase', 'job', 10, true, 'production_lead', null),
-    ('phase.awaiting_goods', 'Awaiting goods', 'phase', 'job', 20, true, 'production_lead', null),
-    ('phase.goods_received', 'Goods received', 'phase', 'job', 30, true, 'production_lead', null),
-    ('phase.ready_for_production', 'Ready for production', 'phase', 'job', 40, true, 'production_lead', 'All production prerequisites look complete. Move to Ready For Production?'),
-    ('phase.scheduled', 'Scheduled', 'phase', 'job', 50, true, 'production_lead', 'Press and day assigned. Mark job scheduled?'),
-    ('phase.in_production', 'In production', 'phase', 'job', 60, true, 'production_worker', 'Production work has started. Mark job In Production?'),
-    ('phase.finishing_qc', 'Finishing / QC', 'phase', 'job', 70, true, 'production_worker', 'Run is complete. Move to finishing/QC?'),
-    ('phase.production_complete', 'Production complete', 'phase', 'job', 80, true, 'production_lead', 'All production tasks are complete. Mark production complete?'),
-    ('art.confirm_artwork_needed', 'Confirm artwork needed', 'task', 'artwork', 100, true, 'production_lead', null),
+    ('phase.needs_sourcing', 'Needs sourcing', 'phase', 'job', 10, true, 'staff', null),
+    ('phase.awaiting_goods', 'Awaiting goods', 'phase', 'job', 20, true, 'staff', null),
+    ('phase.goods_received', 'Goods received', 'phase', 'job', 30, true, 'staff', null),
+    ('phase.ready_for_production', 'Ready for production', 'phase', 'job', 40, true, 'staff', 'All production prerequisites look complete. Move to Ready For Production?'),
+    ('phase.scheduled', 'Scheduled', 'phase', 'job', 50, true, 'staff', 'Press and day assigned. Mark job scheduled?'),
+    ('phase.in_production', 'In production', 'phase', 'job', 60, true, 'staff', 'Production work has started. Mark job In Production?'),
+    ('phase.finishing_qc', 'Finishing / QC', 'phase', 'job', 70, true, 'staff', 'Run is complete. Move to finishing/QC?'),
+    ('phase.production_complete', 'Production complete', 'phase', 'job', 80, true, 'staff', 'All production tasks are complete. Mark production complete?'),
+    ('art.confirm_artwork_needed', 'Confirm artwork needed', 'task', 'artwork', 100, true, 'staff', null),
     ('art.create_revise_artwork', 'Create / revise artwork', 'task', 'artwork', 110, true, 'staff', null),
     ('art.send_artwork_approval', 'Send artwork approval', 'task', 'artwork', 120, true, 'staff', null),
-    ('art.artwork_approved', 'Artwork approved', 'milestone', 'artwork', 130, true, 'production_lead', 'Artwork is approved. Move screen prep to ready?'),
-    ('art.ready_to_burn_screens', 'Ready to burn screens', 'milestone', 'artwork', 140, true, 'production_lead', null),
+    ('art.artwork_approved', 'Artwork approved', 'milestone', 'artwork', 130, true, 'staff', 'Artwork is approved. Move screen prep to ready?'),
+    ('art.ready_to_burn_screens', 'Ready to burn screens', 'milestone', 'artwork', 140, true, 'staff', null),
     ('apparel.confirm_garment_requirements', 'Confirm garment requirements', 'task', 'apparel', 200, true, 'staff', null),
     ('apparel.build_supplier_cart', 'Build supplier cart', 'task', 'apparel', 210, true, 'staff', null),
-    ('apparel.approve_cart', 'Approve cart', 'task', 'apparel', 220, true, 'production_lead', 'Supplier cart is ready. Approve apparel cart for ordering?'),
+    ('apparel.approve_cart', 'Approve cart', 'task', 'apparel', 220, true, 'staff', 'Supplier cart is ready. Approve apparel cart for ordering?'),
     ('apparel.order_apparel', 'Order apparel', 'task', 'apparel', 230, true, 'staff', 'Apparel appears ordered. Move job to awaiting goods?'),
     ('apparel.apparel_shipped', 'Apparel shipped', 'task', 'apparel', 240, true, 'staff', 'Blank apparel appears shipped. Start receiving watch?'),
     ('apparel.apparel_received', 'Apparel received', 'milestone', 'apparel', 250, true, 'staff', 'Blank apparel has been received. Release goods for production?'),
-    ('prep.burn_screens', 'Burn screens', 'task', 'production_prep', 300, true, 'production_worker', null),
-    ('prep.confirm_print_locations', 'Confirm print locations', 'task', 'production_prep', 310, true, 'production_lead', null),
-    ('prep.confirm_ink_color_count', 'Confirm ink / color count', 'task', 'production_prep', 320, true, 'production_lead', null),
-    ('prep.confirm_garment_handling', 'Confirm garment material / handling', 'task', 'production_prep', 330, true, 'production_lead', null),
-    ('prep.confirm_finishing_requirements', 'Confirm finishing requirements', 'task', 'production_prep', 340, true, 'production_lead', null),
-    ('prep.estimate_difficulty_time', 'Estimate difficulty / time', 'task', 'production_prep', 350, true, 'production_lead', null),
-    ('prep.assign_press_day', 'Assign press / day', 'task', 'production_prep', 360, true, 'production_lead', 'Press and day assigned. Mark job scheduled?'),
-    ('production.ready_for_production', 'Ready for production', 'milestone', 'production', 400, true, 'production_lead', 'All production prerequisites look complete. Move to Ready For Production?'),
-    ('production.in_production', 'In production', 'task', 'production', 410, true, 'production_worker', 'Production work has started. Mark job In Production?'),
-    ('production.finishing_qc', 'Finishing / QC', 'task', 'production', 420, true, 'production_worker', 'Run is complete. Move to finishing/QC?'),
-    ('production.production_complete', 'Production complete', 'milestone', 'production', 430, true, 'production_lead', 'All production tasks are complete. Mark production complete?'),
+    ('prep.burn_screens', 'Burn screens', 'task', 'production_prep', 300, true, 'staff', null),
+    ('prep.confirm_print_locations', 'Confirm print locations', 'task', 'production_prep', 310, true, 'staff', null),
+    ('prep.confirm_ink_color_count', 'Confirm ink / color count', 'task', 'production_prep', 320, true, 'staff', null),
+    ('prep.confirm_garment_handling', 'Confirm garment material / handling', 'task', 'production_prep', 330, true, 'staff', null),
+    ('prep.confirm_finishing_requirements', 'Confirm finishing requirements', 'task', 'production_prep', 340, true, 'staff', null),
+    ('prep.estimate_difficulty_time', 'Estimate difficulty / time', 'task', 'production_prep', 350, true, 'staff', null),
+    ('prep.assign_press_day', 'Assign press / day', 'task', 'production_prep', 360, true, 'staff', 'Press and day assigned. Mark job scheduled?'),
+    ('production.ready_for_production', 'Ready for production', 'milestone', 'production', 400, true, 'staff', 'All production prerequisites look complete. Move to Ready For Production?'),
+    ('production.in_production', 'In production', 'task', 'production', 410, true, 'staff', 'Production work has started. Mark job In Production?'),
+    ('production.finishing_qc', 'Finishing / QC', 'task', 'production', 420, true, 'staff', 'Run is complete. Move to finishing/QC?'),
+    ('production.production_complete', 'Production complete', 'milestone', 'production', 430, true, 'staff', 'All production tasks are complete. Mark production complete?'),
     ('fulfillment.ready_inventory', 'Fulfillment: readyInventory', 'task', 'customer_fulfillment', 500, true, 'staff', 'Printed goods are ready. Mark fulfillment readyInventory?'),
     ('fulfillment.shipped_picked_up', 'Fulfillment: shipped / picked up', 'task', 'customer_fulfillment', 510, true, 'staff', 'Order has shipped or been picked up. Mark customer fulfillment shipped?'),
     ('fulfillment.received_by_customer', 'Fulfillment: received by customer', 'milestone', 'customer_fulfillment', 520, true, 'staff', 'Customer has received the order. Mark fulfillment received?')
@@ -572,16 +572,16 @@ select
 from workflow
 cross join (
   values
-    (null, 'phase.needs_sourcing', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.needs_sourcing', 'phase.awaiting_goods', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.awaiting_goods', 'phase.goods_received', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.goods_received', 'phase.ready_for_production', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.ready_for_production', 'phase.scheduled', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.scheduled', 'phase.in_production', 'forward', array['owner', 'admin', 'production_lead', 'production_worker'], false),
-    ('phase.in_production', 'phase.finishing_qc', 'forward', array['owner', 'admin', 'production_lead', 'production_worker'], false),
-    ('phase.finishing_qc', 'phase.production_complete', 'forward', array['owner', 'admin', 'production_lead'], false),
-    ('phase.scheduled', 'phase.ready_for_production', 'backward', array['owner', 'admin', 'production_lead'], true),
-    ('phase.in_production', 'phase.scheduled', 'backward', array['owner', 'admin', 'production_lead'], true),
+    (null, 'phase.needs_sourcing', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.needs_sourcing', 'phase.awaiting_goods', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.awaiting_goods', 'phase.goods_received', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.goods_received', 'phase.ready_for_production', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.ready_for_production', 'phase.scheduled', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.scheduled', 'phase.in_production', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.in_production', 'phase.finishing_qc', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.finishing_qc', 'phase.production_complete', 'forward', array['owner', 'admin', 'staff'], false),
+    ('phase.scheduled', 'phase.ready_for_production', 'backward', array['owner', 'admin', 'staff'], true),
+    ('phase.in_production', 'phase.scheduled', 'backward', array['owner', 'admin', 'staff'], true),
     ('phase.production_complete', 'phase.finishing_qc', 'backward', array['owner', 'admin'], true)
 ) as transition(from_step_key, to_step_key, direction, allowed_roles, requires_reason)
 on conflict (workflow_definition_id, from_step_key, to_step_key, direction) do update

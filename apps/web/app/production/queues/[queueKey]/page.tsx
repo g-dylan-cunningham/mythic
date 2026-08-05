@@ -14,11 +14,10 @@ type Params = Promise<{ queueKey: string }>;
 
 type QueueTask = {
   id: string;
-  assigned_role: string | null;
   blocked_reason: string | null;
   label_snapshot: string;
+  owning_department: string | null;
   status: string;
-  track_snapshot: string;
   workflow_step_key: string;
   production_jobs: {
     id: string;
@@ -65,16 +64,6 @@ function queueHoverText(queueKey: string) {
   switch (queueKey) {
     case "blocked":
       return hoverTextCopy.queues.blocked;
-    case "customer-fulfillment":
-      return hoverTextCopy.production.customerFulfillmentQueue;
-    case "production-lead":
-      return hoverTextCopy.queues.productionLead;
-    case "production-worker":
-      return hoverTextCopy.queues.productionWorker;
-    case "receiving":
-      return hoverTextCopy.queues.receiving;
-    case "staff":
-      return hoverTextCopy.queues.staff;
     default:
       return hoverTextCopy.links.queue;
   }
@@ -102,7 +91,7 @@ export default async function ProductionQueuePage({
   const { data: tasks, error } = await supabase
     .from("production_tasks")
     .select(
-      "id,assigned_role,blocked_reason,label_snapshot,status,track_snapshot,workflow_step_key,production_jobs(id,customer_name,due_date,job_name,priority,current_phase_label_snapshot,printavo_order_number)",
+      "id,blocked_reason,label_snapshot,owning_department,status,workflow_step_key,production_jobs(id,customer_name,due_date,job_name,priority,current_phase_label_snapshot,printavo_order_number)",
     )
     .order("status", { ascending: true })
     .order("created_at", { ascending: true })
@@ -165,7 +154,7 @@ export default async function ProductionQueuePage({
                 <th className="px-4 py-3 font-semibold">Job</th>
                 <th className="px-4 py-3 font-semibold">Phase</th>
                 <th className="px-4 py-3 font-semibold">Due</th>
-                <th className="px-4 py-3 font-semibold">Role</th>
+                <th className="px-4 py-3 font-semibold">Owner</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-800 bg-neutral-950">
@@ -212,8 +201,9 @@ export default async function ProductionQueuePage({
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-neutral-300">
                     {formatDate(task.production_jobs?.due_date)}
                   </td>
-                  <td className="px-4 py-3 font-mono text-neutral-300">
-                    {task.assigned_role ?? "unassigned"}
+                  <td className="px-4 py-3 font-mono capitalize text-neutral-300">
+                    {task.owning_department?.replaceAll("_", " ") ??
+                      "unowned"}
                   </td>
                 </tr>
               ))}

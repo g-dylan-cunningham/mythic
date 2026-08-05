@@ -20,7 +20,7 @@ select
   'apparel',
   220,
   true,
-  'production_lead'::public.app_role,
+  'staff'::public.app_role,
   'Supplier cart is ready. Approve apparel cart for ordering?'
 from workflow
 on conflict (workflow_definition_id, key) do update

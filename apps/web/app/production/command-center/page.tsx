@@ -136,7 +136,7 @@ export default async function ProductionCommandCenterPage() {
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
               Medium-build control surface for queue health, blockers,
-              receiving, fulfillment, estimates, and difficult work.
+              estimates, and difficult work.
             </p>
           </div>
           <HoverText text={hoverTextCopy.actions.manualPrintavoSync}>

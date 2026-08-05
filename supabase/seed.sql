@@ -142,6 +142,82 @@ set
   reauthentication_token = excluded.reauthentication_token,
   updated_at = now();
 
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  phone,
+  phone_change,
+  phone_change_token,
+  reauthentication_token,
+  is_sso_user,
+  is_anonymous
+)
+select
+  '00000000-0000-0000-0000-000000000000',
+  demo.id::uuid,
+  'authenticated',
+  'authenticated',
+  demo.email,
+  crypt('flower1234', gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  '',
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', demo.full_name),
+  now(),
+  now(),
+  null,
+  '',
+  '',
+  '',
+  false,
+  false
+from (
+  values
+    ('10000000-0000-0000-0000-000000000010', 'sales-junior@mythic.press', 'Sales Junior Employee'),
+    ('10000000-0000-0000-0000-000000000026', 'sales-junior-2@mythic.press', 'Sales Junior Employee 2'),
+    ('10000000-0000-0000-0000-000000000011', 'sales-senior@mythic.press', 'Sales Senior Employee'),
+    ('10000000-0000-0000-0000-000000000012', 'sales-manager@mythic.press', 'Sales Junior Manager'),
+    ('10000000-0000-0000-0000-000000000013', 'sales-senior-manager@mythic.press', 'Sales Senior Manager'),
+    ('10000000-0000-0000-0000-000000000014', 'design-junior@mythic.press', 'Design Junior Employee'),
+    ('10000000-0000-0000-0000-000000000015', 'design-senior@mythic.press', 'Design Senior Employee'),
+    ('10000000-0000-0000-0000-000000000016', 'design-manager@mythic.press', 'Design Junior Manager'),
+    ('10000000-0000-0000-0000-000000000017', 'design-senior-manager@mythic.press', 'Design Senior Manager'),
+    ('10000000-0000-0000-0000-000000000018', 'production-junior@mythic.press', 'Production Junior Employee'),
+    ('10000000-0000-0000-0000-000000000019', 'production-senior@mythic.press', 'Production Senior Employee'),
+    ('10000000-0000-0000-0000-000000000020', 'production-manager@mythic.press', 'Production Junior Manager'),
+    ('10000000-0000-0000-0000-000000000021', 'production-senior-manager@mythic.press', 'Production Senior Manager'),
+    ('10000000-0000-0000-0000-000000000022', 'logistics-junior@mythic.press', 'Logistics Junior Employee'),
+    ('10000000-0000-0000-0000-000000000023', 'logistics-senior@mythic.press', 'Logistics Senior Employee'),
+    ('10000000-0000-0000-0000-000000000024', 'logistics-manager@mythic.press', 'Logistics Junior Manager'),
+    ('10000000-0000-0000-0000-000000000025', 'logistics-senior-manager@mythic.press', 'Logistics Senior Manager')
+) as demo(id, email, full_name)
+on conflict (id) do update
+set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = excluded.email_confirmed_at,
+  raw_app_meta_data = excluded.raw_app_meta_data,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = now();
+
 insert into auth.identities (
   provider_id,
   user_id,
@@ -198,11 +274,66 @@ set
   identity_data = excluded.identity_data,
   updated_at = now();
 
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at,
+  id
+)
+select
+  demo.id,
+  demo.id::uuid,
+  jsonb_build_object(
+    'sub',
+    demo.id,
+    'email',
+    demo.email,
+    'email_verified',
+    true,
+    'phone_verified',
+    false
+  ),
+  'email',
+  now(),
+  now(),
+  now(),
+  demo.identity_id::uuid
+from (
+  values
+    ('10000000-0000-0000-0000-000000000010', '20000000-0000-0000-0000-000000000010', 'sales-junior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000026', '20000000-0000-0000-0000-000000000026', 'sales-junior-2@mythic.press'),
+    ('10000000-0000-0000-0000-000000000011', '20000000-0000-0000-0000-000000000011', 'sales-senior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000012', '20000000-0000-0000-0000-000000000012', 'sales-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000013', '20000000-0000-0000-0000-000000000013', 'sales-senior-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000014', '20000000-0000-0000-0000-000000000014', 'design-junior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000015', '20000000-0000-0000-0000-000000000015', 'design-senior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000016', '20000000-0000-0000-0000-000000000016', 'design-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000017', '20000000-0000-0000-0000-000000000017', 'design-senior-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000018', '20000000-0000-0000-0000-000000000018', 'production-junior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000019', '20000000-0000-0000-0000-000000000019', 'production-senior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000020', '20000000-0000-0000-0000-000000000020', 'production-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000021', '20000000-0000-0000-0000-000000000021', 'production-senior-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000022', '20000000-0000-0000-0000-000000000022', 'logistics-junior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000023', '20000000-0000-0000-0000-000000000023', 'logistics-senior@mythic.press'),
+    ('10000000-0000-0000-0000-000000000024', '20000000-0000-0000-0000-000000000024', 'logistics-manager@mythic.press'),
+    ('10000000-0000-0000-0000-000000000025', '20000000-0000-0000-0000-000000000025', 'logistics-senior-manager@mythic.press')
+) as demo(id, identity_id, email)
+on conflict (provider, provider_id) do update
+set
+  identity_data = excluded.identity_data,
+  updated_at = now();
+
 insert into public.profiles (
   id,
   email,
   full_name,
   role,
+  department,
+  authority_level,
   is_active
 )
 values
@@ -211,6 +342,8 @@ values
     'owner@mythic.press',
     'Mythic Owner',
     'owner',
+    'operations',
+    'director',
     true
   ),
   (
@@ -218,6 +351,8 @@ values
     'admin@mythic.press',
     'Mythic Admin',
     'admin',
+    'operations',
+    'director',
     true
   ),
   (
@@ -225,6 +360,8 @@ values
     'staff@mythic.press',
     'Mythic Staff',
     'staff',
+    null,
+    'senior_employee',
     true
   ),
   (
@@ -232,6 +369,8 @@ values
     'cole@mythic.press',
     'Cole',
     'owner',
+    'operations',
+    'director',
     true
   )
 on conflict (id) do update
@@ -239,6 +378,54 @@ set
   email = excluded.email,
   full_name = excluded.full_name,
   role = excluded.role,
+  department = excluded.department,
+  authority_level = excluded.authority_level,
+  is_active = excluded.is_active;
+
+insert into public.profiles (
+  id,
+  email,
+  full_name,
+  role,
+  department,
+  authority_level,
+  is_active
+)
+select
+  demo.id::uuid,
+  demo.email,
+  demo.full_name,
+  demo.app_role::public.app_role,
+  demo.department::public.org_department,
+  demo.authority_level::public.authority_level,
+  true
+from (
+  values
+    ('10000000-0000-0000-0000-000000000010', 'sales-junior@mythic.press', 'Sales Junior Employee', 'staff', 'sales', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000026', 'sales-junior-2@mythic.press', 'Sales Junior Employee 2', 'staff', 'sales', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000011', 'sales-senior@mythic.press', 'Sales Senior Employee', 'staff', 'sales', 'senior_employee'),
+    ('10000000-0000-0000-0000-000000000012', 'sales-manager@mythic.press', 'Sales Junior Manager', 'staff', 'sales', 'junior_manager'),
+    ('10000000-0000-0000-0000-000000000013', 'sales-senior-manager@mythic.press', 'Sales Senior Manager', 'staff', 'sales', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000014', 'design-junior@mythic.press', 'Design Junior Employee', 'staff', 'design', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000015', 'design-senior@mythic.press', 'Design Senior Employee', 'staff', 'design', 'senior_employee'),
+    ('10000000-0000-0000-0000-000000000016', 'design-manager@mythic.press', 'Design Junior Manager', 'staff', 'design', 'junior_manager'),
+    ('10000000-0000-0000-0000-000000000017', 'design-senior-manager@mythic.press', 'Design Senior Manager', 'staff', 'design', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000018', 'production-junior@mythic.press', 'Production Junior Employee', 'staff', 'production', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000019', 'production-senior@mythic.press', 'Production Senior Employee', 'staff', 'production', 'senior_employee'),
+    ('10000000-0000-0000-0000-000000000020', 'production-manager@mythic.press', 'Production Junior Manager', 'staff', 'production', 'junior_manager'),
+    ('10000000-0000-0000-0000-000000000021', 'production-senior-manager@mythic.press', 'Production Senior Manager', 'staff', 'production', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000022', 'logistics-junior@mythic.press', 'Logistics Junior Employee', 'staff', 'logistics', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000023', 'logistics-senior@mythic.press', 'Logistics Senior Employee', 'staff', 'logistics', 'senior_employee'),
+    ('10000000-0000-0000-0000-000000000024', 'logistics-manager@mythic.press', 'Logistics Junior Manager', 'staff', 'logistics', 'junior_manager'),
+    ('10000000-0000-0000-0000-000000000025', 'logistics-senior-manager@mythic.press', 'Logistics Senior Manager', 'staff', 'logistics', 'senior_manager')
+) as demo(id, email, full_name, app_role, department, authority_level)
+on conflict (id) do update
+set
+  email = excluded.email,
+  full_name = excluded.full_name,
+  role = excluded.role,
+  department = excluded.department,
+  authority_level = excluded.authority_level,
   is_active = excluded.is_active;
 
 with workflow as (
@@ -358,6 +545,7 @@ tasks as (
     workflow_version,
     label_snapshot,
     track_snapshot,
+    owning_department,
     status,
     assigned_role,
     started_at,
@@ -372,6 +560,7 @@ tasks as (
     job.workflow_version,
     workflow_steps.label,
     workflow_steps.track,
+    workflow_steps.default_department,
     coalesce(task_states.status, 'open'),
     workflow_steps.default_assigned_role,
     case
@@ -402,6 +591,7 @@ tasks as (
     workflow_version = excluded.workflow_version,
     label_snapshot = excluded.label_snapshot,
     track_snapshot = excluded.track_snapshot,
+    owning_department = excluded.owning_department,
     status = excluded.status,
     assigned_role = excluded.assigned_role,
     started_at = excluded.started_at,
@@ -448,3 +638,153 @@ set
   workflow_version = excluded.workflow_version,
   note = excluded.note,
   metadata = excluded.metadata;
+
+-- Mythic rollout sandbox users. These accounts are intentionally confirmed so
+-- employees can log into local/demo environments without email verification.
+insert into auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  email_change_token_current,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at,
+  phone,
+  phone_change,
+  phone_change_token,
+  reauthentication_token,
+  is_sso_user,
+  is_anonymous
+)
+select
+  '00000000-0000-0000-0000-000000000000',
+  demo.id::uuid,
+  'authenticated',
+  'authenticated',
+  demo.email,
+  crypt('flower1234', gen_salt('bf')),
+  now(),
+  '',
+  '',
+  '',
+  '',
+  '',
+  '{"provider":"email","providers":["email"]}'::jsonb,
+  jsonb_build_object('full_name', demo.full_name),
+  now(),
+  now(),
+  null,
+  '',
+  '',
+  '',
+  false,
+  false
+from (
+  values
+    ('10000000-0000-0000-0000-000000000004', 'cole@mythic.press', 'Cole'),
+    ('10000000-0000-0000-0000-000000000030', 'allison@mythic.press', 'Allison'),
+    ('10000000-0000-0000-0000-000000000031', 'haley@mythic.press', 'Haley'),
+    ('10000000-0000-0000-0000-000000000032', 'dillon@mythic.press', 'Dillon'),
+    ('10000000-0000-0000-0000-000000000033', 'logan@mythic.press', 'Logan'),
+    ('10000000-0000-0000-0000-000000000034', 'dave@mythic.press', 'Dave'),
+    ('10000000-0000-0000-0000-000000000035', 'tim@mythic.press', 'Tim'),
+    ('10000000-0000-0000-0000-000000000036', 'kyle@mythic.press', 'Kyle')
+) as demo(id, email, full_name)
+on conflict (id) do update
+set
+  email = excluded.email,
+  encrypted_password = excluded.encrypted_password,
+  email_confirmed_at = excluded.email_confirmed_at,
+  raw_app_meta_data = excluded.raw_app_meta_data,
+  raw_user_meta_data = excluded.raw_user_meta_data,
+  updated_at = now();
+
+insert into auth.identities (
+  provider_id,
+  user_id,
+  identity_data,
+  provider,
+  last_sign_in_at,
+  created_at,
+  updated_at,
+  id
+)
+select
+  demo.id,
+  demo.id::uuid,
+  jsonb_build_object(
+    'sub',
+    demo.id,
+    'email',
+    demo.email,
+    'email_verified',
+    true,
+    'phone_verified',
+    false
+  ),
+  'email',
+  now(),
+  now(),
+  now(),
+  demo.identity_id::uuid
+from (
+  values
+    ('10000000-0000-0000-0000-000000000004', '20000000-0000-0000-0000-000000000004', 'cole@mythic.press'),
+    ('10000000-0000-0000-0000-000000000030', '20000000-0000-0000-0000-000000000030', 'allison@mythic.press'),
+    ('10000000-0000-0000-0000-000000000031', '20000000-0000-0000-0000-000000000031', 'haley@mythic.press'),
+    ('10000000-0000-0000-0000-000000000032', '20000000-0000-0000-0000-000000000032', 'dillon@mythic.press'),
+    ('10000000-0000-0000-0000-000000000033', '20000000-0000-0000-0000-000000000033', 'logan@mythic.press'),
+    ('10000000-0000-0000-0000-000000000034', '20000000-0000-0000-0000-000000000034', 'dave@mythic.press'),
+    ('10000000-0000-0000-0000-000000000035', '20000000-0000-0000-0000-000000000035', 'tim@mythic.press'),
+    ('10000000-0000-0000-0000-000000000036', '20000000-0000-0000-0000-000000000036', 'kyle@mythic.press')
+) as demo(id, identity_id, email)
+on conflict (provider, provider_id) do update
+set
+  identity_data = excluded.identity_data,
+  updated_at = now();
+
+insert into public.profiles (
+  id,
+  email,
+  full_name,
+  role,
+  department,
+  authority_level,
+  is_active
+)
+select
+  demo.id::uuid,
+  demo.email,
+  demo.full_name,
+  demo.app_role::public.app_role,
+  demo.department::public.org_department,
+  demo.authority_level::public.authority_level,
+  true
+from (
+  values
+    ('10000000-0000-0000-0000-000000000004', 'cole@mythic.press', 'Cole', 'owner', 'operations', 'director'),
+    ('10000000-0000-0000-0000-000000000030', 'allison@mythic.press', 'Allison', 'admin', 'sales', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000031', 'haley@mythic.press', 'Haley', 'staff', 'sales', 'senior_employee'),
+    ('10000000-0000-0000-0000-000000000032', 'dillon@mythic.press', 'Dillon', 'staff', 'production', 'junior_manager'),
+    ('10000000-0000-0000-0000-000000000033', 'logan@mythic.press', 'Logan', 'staff', 'production', 'junior_employee'),
+    ('10000000-0000-0000-0000-000000000034', 'dave@mythic.press', 'Dave', 'staff', 'logistics', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000035', 'tim@mythic.press', 'Tim', 'staff', 'design', 'senior_manager'),
+    ('10000000-0000-0000-0000-000000000036', 'kyle@mythic.press', 'Kyle', 'staff', 'production', 'senior_manager')
+) as demo(id, email, full_name, app_role, department, authority_level)
+on conflict (id) do update
+set
+  email = excluded.email,
+  full_name = excluded.full_name,
+  role = excluded.role,
+  department = excluded.department,
+  authority_level = excluded.authority_level,
+  is_active = excluded.is_active;

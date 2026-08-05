@@ -2,19 +2,34 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
+import { ProductionJobMapModal } from "@/app/production/[jobId]/production-job-map-modal";
+import { ReopenDecisionModalButton } from "@/app/production/[jobId]/reopen-decision-modal-button";
+import { TaskDecisionModalButton } from "@/app/production/[jobId]/task-decision-modal-button";
+import { TaskStatusModalButton } from "@/app/production/[jobId]/task-status-modal-button";
 import {
   advanceProductionPhase,
+  addProductionTaskCollaborator,
+  addProductionTaskComment,
+  assignProductionTask,
   blockProductionTask,
+  changeProductionTaskDepartment,
   completeProductionTask,
   reopenProductionTask,
+  removeProductionTaskCollaborator,
+  resolveArtworkNeededProductionTask,
   unblockProductionTask,
+  unassignProductionTask,
+  updateProductionTaskOwningManager,
 } from "@/app/production/actions";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
+  ORG_DEPARTMENTS,
   canManageProduction,
+  canManageUsers,
   canUseOperations,
   canViewOwnerProductionOverview,
   canWorkProductionTasks,
+  isDepartmentManager,
 } from "@/lib/auth/roles";
 import { suggestNextActions } from "@/lib/production-workflow/engine";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
@@ -28,6 +43,7 @@ type SearchParams = Promise<{
 
 type ProductionJobDetail = {
   id: string;
+  workflow_definition_id: string;
   printavo_order_id: number;
   printavo_order_number: string | null;
   printavo_status_id: number | null;
@@ -47,6 +63,10 @@ type ProductionTaskRow = {
   workflow_step_key: string;
   label_snapshot: string;
   track_snapshot: string;
+  owning_department: string | null;
+  outcome_key: string | null;
+  outcome_label_snapshot: string | null;
+  outcome_note: string | null;
   status: string;
   assigned_role: string | null;
   assigned_user_id: string | null;
@@ -59,8 +79,42 @@ type ProductionTaskRow = {
   } | null;
 };
 
+type ProfileOption = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: string;
+  department: string | null;
+  authority_level: string;
+};
+
+type TaskCollaboratorRow = {
+  id: string;
+  production_task_id: string;
+  user_id: string;
+  collaborator_role: string;
+  removed_at: string | null;
+};
+
+type TaskCommentRow = {
+  id: string;
+  production_task_id: string;
+  author_user_id: string | null;
+  comment_type: string;
+  body: string;
+  created_at: string;
+};
+
+type ProductionJobOwnerRow = {
+  department: string | null;
+  owner_role: string;
+  production_job_id: string;
+  user_id: string;
+};
+
 type ProductionEventRow = {
   id: string;
+  production_task_id: string | null;
   actor_user_id: string | null;
   event_type: string;
   source: string;
@@ -71,6 +125,12 @@ type ProductionEventRow = {
   created_at: string;
 };
 
+type WorkflowDependencyRow = {
+  dependency_type: string;
+  depends_on_step_key: string;
+  step_key: string;
+};
+
 const trackLabels: Record<string, string> = {
   apparel: "Apparel",
   artwork: "Artwork",
@@ -78,6 +138,17 @@ const trackLabels: Record<string, string> = {
   production: "Production",
   production_prep: "Production Prep",
 };
+
+const selfAssignedTaskClass =
+  "border-l-4 border-l-emerald-400 bg-emerald-400/10 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.18)]";
+
+function selfAssignedChip() {
+  return (
+    <span className="rounded-md border border-emerald-400/40 bg-emerald-400/10 px-2 py-1 text-xs font-medium text-emerald-100">
+      Assigned to you
+    </span>
+  );
+}
 
 const taskPhaseLabels: Record<string, string[]> = {
   "apparel.confirm_garment_requirements": ["Needs sourcing"],
@@ -116,6 +187,31 @@ const statusClasses: Record<string, string> = {
   skipped: "border-neutral-600 bg-neutral-800 text-neutral-300",
 };
 
+const artworkNeededDecisionOptions = [
+  {
+    description:
+      "Artwork work is required. Keep create/revise artwork and approval tasks active.",
+    label: "Artwork needed",
+    value: "artwork_needed",
+  },
+  {
+    description:
+      "No artwork creation or approval is needed. Skip the downstream artwork tasks.",
+    label: "Artwork not needed",
+    value: "artwork_not_needed",
+  },
+  {
+    description:
+      "More information is needed before deciding. Block this task for follow-up.",
+    label: "Customer follow-up needed",
+    value: "customer_followup_needed",
+  },
+];
+
+function isArtworkNeededDecisionTask(task: ProductionTaskRow) {
+  return task.workflow_step_key === "art.confirm_artwork_needed";
+}
+
 function formatDate(value: string | null) {
   if (!value) {
     return "No date";
@@ -139,6 +235,38 @@ function formatDateTime(value: string | null) {
 
 function labelForTrack(track: string) {
   return trackLabels[track] ?? track.replaceAll("_", " ");
+}
+
+function labelize(value: string | null | undefined) {
+  return value ? value.replaceAll("_", " ") : "not assigned";
+}
+
+function profileName(profile: ProfileOption | undefined) {
+  return profile?.full_name || profile?.email || "Unassigned";
+}
+
+function eligibleAssigneesForTask(
+  task: ProductionTaskRow,
+  profiles: ProfileOption[],
+) {
+  const departmentEmployees = profiles.filter(
+    (profile) =>
+      profile.role === "staff" &&
+      profile.department &&
+      profile.department === task.owning_department,
+  );
+  const currentAssignee = task.assigned_user_id
+    ? profiles.find((profile) => profile.id === task.assigned_user_id)
+    : undefined;
+
+  if (
+    currentAssignee &&
+    !departmentEmployees.some((profile) => profile.id === currentAssignee.id)
+  ) {
+    return [currentAssignee, ...departmentEmployees];
+  }
+
+  return departmentEmployees;
 }
 
 function phasesForTask(workflowStepKey: string) {
@@ -181,6 +309,32 @@ function statusBadge(status: string) {
   );
 }
 
+function eventStateLabel(
+  value: string | null,
+  profilesById: Map<string, ProfileOption>,
+) {
+  if (!value) {
+    return null;
+  }
+
+  return profileName(profilesById.get(value)) === "Unassigned"
+    ? labelize(value)
+    : profileName(profilesById.get(value));
+}
+
+function groupedByTask<T extends { production_task_id: string }>(rows: T[]) {
+  const groups = new Map<string, T[]>();
+
+  for (const row of rows) {
+    groups.set(row.production_task_id, [
+      ...(groups.get(row.production_task_id) ?? []),
+      row,
+    ]);
+  }
+
+  return groups;
+}
+
 export default async function ProductionJobDetailPage({
   params,
   searchParams,
@@ -201,19 +355,22 @@ export default async function ProductionJobDetailPage({
     { data: job, error: jobError },
     { data: tasks, error: taskError },
     { data: events, error: eventError },
+    { data: staffProfiles, error: profileError },
+    { data: comments, error: commentError },
+    { data: jobOwners, error: jobOwnerError },
     suggestions,
   ] = await Promise.all([
     supabase
       .from("production_jobs")
       .select(
-        "id,printavo_order_id,printavo_order_number,printavo_status_id,printavo_status_name,customer_name,job_name,current_phase_key,current_phase_label_snapshot,due_date,priority,difficulty_score,estimated_minutes",
+        "id,workflow_definition_id,printavo_order_id,printavo_order_number,printavo_status_id,printavo_status_name,customer_name,job_name,current_phase_key,current_phase_label_snapshot,due_date,priority,difficulty_score,estimated_minutes",
       )
       .eq("id", jobId)
       .single<ProductionJobDetail>(),
     supabase
       .from("production_tasks")
       .select(
-        "id,workflow_step_key,label_snapshot,track_snapshot,status,assigned_role,assigned_user_id,blocked_reason,started_at,completed_at,created_at,workflow_steps(sort_order)",
+        "id,workflow_step_key,label_snapshot,track_snapshot,owning_department,outcome_key,outcome_label_snapshot,outcome_note,status,assigned_role,assigned_user_id,blocked_reason,started_at,completed_at,created_at,workflow_steps(sort_order)",
       )
       .eq("production_job_id", jobId)
       .order("track_snapshot", { ascending: true })
@@ -221,12 +378,35 @@ export default async function ProductionJobDetailPage({
     supabase
       .from("production_job_events")
       .select(
-        "id,actor_user_id,event_type,source,from_state_label_snapshot,to_state_label_snapshot,reason,note,created_at",
+        "id,production_task_id,actor_user_id,event_type,source,from_state_label_snapshot,to_state_label_snapshot,reason,note,created_at",
       )
       .eq("production_job_id", jobId)
       .order("created_at", { ascending: false })
-      .limit(50)
+      .limit(200)
       .returns<ProductionEventRow[]>(),
+    supabase
+      .from("profiles")
+      .select("id,email,full_name,role,department,authority_level")
+      .eq("is_active", true)
+      .in("role", ["owner", "admin", "staff"])
+      .order("department", { ascending: true })
+      .order("full_name", { ascending: true })
+      .returns<ProfileOption[]>(),
+    supabase
+      .from("production_task_comments")
+      .select("id,production_task_id,author_user_id,comment_type,body,created_at")
+      .eq("production_job_id", jobId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(120)
+      .returns<TaskCommentRow[]>(),
+    supabase
+      .from("production_job_owners")
+      .select("production_job_id,user_id,department,owner_role")
+      .eq("production_job_id", jobId)
+      .eq("owner_role", "department_manager")
+      .is("removed_at", null)
+      .returns<ProductionJobOwnerRow[]>(),
     suggestNextActions(supabase, jobId),
   ]);
 
@@ -234,16 +414,67 @@ export default async function ProductionJobDetailPage({
     notFound();
   }
 
-  if (taskError || eventError) {
-    throw new Error(taskError?.message ?? eventError?.message);
+  if (taskError || eventError || profileError || commentError || jobOwnerError) {
+    throw new Error(
+      taskError?.message ??
+        eventError?.message ??
+        profileError?.message ??
+        commentError?.message ??
+        jobOwnerError?.message,
+    );
   }
 
   if (!job) {
     notFound();
   }
 
+  const { data: dependencies, error: dependencyError } = await supabase
+    .from("workflow_dependencies")
+    .select("step_key,depends_on_step_key,dependency_type")
+    .eq("workflow_definition_id", job.workflow_definition_id)
+    .returns<WorkflowDependencyRow[]>();
+
+  if (dependencyError) {
+    throw new Error(dependencyError.message);
+  }
+
   const canMutateTasks = canWorkProductionTasks(profile.role);
   const canAdvance = canManageProduction(profile.role);
+  const canManageTaskRouting =
+    canManageUsers(profile.role) || isDepartmentManager(profile.authority_level);
+  const taskIds = (tasks ?? []).map((task) => task.id);
+  const { data: collaborators, error: collaboratorError } =
+    taskIds.length > 0
+      ? await supabase
+          .from("production_task_collaborators")
+          .select(
+            "id,production_task_id,user_id,collaborator_role,removed_at",
+          )
+          .in("production_task_id", taskIds)
+          .is("removed_at", null)
+          .returns<TaskCollaboratorRow[]>()
+      : { data: [], error: null };
+
+  if (collaboratorError) {
+    throw new Error(collaboratorError.message);
+  }
+
+  const profilesById = new Map(
+    (staffProfiles ?? []).map((staffProfile) => [staffProfile.id, staffProfile]),
+  );
+  const managerOwnersByDepartment = new Map(
+    (jobOwners ?? [])
+      .filter((owner) => owner.department)
+      .map((owner) => [owner.department, owner]),
+  );
+  const commentsByTask = groupedByTask(comments ?? []);
+  const eventsByTask = groupedByTask(
+    (events ?? []).filter(
+      (event): event is ProductionEventRow & { production_task_id: string } =>
+        Boolean(event.production_task_id),
+    ),
+  );
+  const collaboratorsByTask = groupedByTask(collaborators ?? []);
   const completeCount = (tasks ?? []).filter(
     (task) => task.status === "complete",
   ).length;
@@ -352,26 +583,40 @@ export default async function ProductionJobDetailPage({
                 {job.printavo_order_number ?? job.printavo_order_id}
               </p>
             </div>
-            <div className="grid gap-2 text-sm sm:grid-cols-4 lg:min-w-[520px]">
-              <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
-                <p className="text-neutral-500">Due</p>
-                <p className="mt-1 font-mono">{formatDate(job.due_date)}</p>
+            <div className="flex flex-col gap-3 lg:min-w-[520px]">
+              <div className="grid gap-2 text-sm sm:grid-cols-4">
+                <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
+                  <p className="text-neutral-500">Due</p>
+                  <p className="mt-1 font-mono">{formatDate(job.due_date)}</p>
+                </div>
+                <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
+                  <p className="text-neutral-500">Tasks</p>
+                  <p className="mt-1 font-mono">
+                    {completeCount}/{tasks?.length ?? 0}
+                  </p>
+                </div>
+                <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
+                  <p className="text-neutral-500">Difficulty</p>
+                  <p className="mt-1 font-mono">
+                    {job.difficulty_score ?? "n/a"}
+                  </p>
+                </div>
+                <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
+                  <p className="text-neutral-500">Estimate</p>
+                  <p className="mt-1 font-mono">
+                    {job.estimated_minutes ? `${job.estimated_minutes}m` : "n/a"}
+                  </p>
+                </div>
               </div>
-              <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
-                <p className="text-neutral-500">Tasks</p>
-                <p className="mt-1 font-mono">
-                  {completeCount}/{tasks?.length ?? 0}
-                </p>
-              </div>
-              <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
-                <p className="text-neutral-500">Difficulty</p>
-                <p className="mt-1 font-mono">{job.difficulty_score ?? "n/a"}</p>
-              </div>
-              <div className="rounded-md border border-neutral-800 bg-neutral-900 p-3">
-                <p className="text-neutral-500">Estimate</p>
-                <p className="mt-1 font-mono">
-                  {job.estimated_minutes ? `${job.estimated_minutes}m` : "n/a"}
-                </p>
+              <div className="flex justify-end">
+                <ProductionJobMapModal
+                  dependencies={dependencies ?? []}
+                  job={job}
+                  jobOwners={jobOwners ?? []}
+                  profiles={staffProfiles ?? []}
+                  tasks={tasks ?? []}
+                  trackLabels={trackLabels}
+                />
               </div>
             </div>
           </div>
@@ -421,19 +666,305 @@ export default async function ProductionJobDetailPage({
                     </span>
                   </summary>
                   <div className="divide-y divide-neutral-800">
-                  {trackTasks.map((task) => (
-                    <div className="px-5 py-4" key={task.id}>
+                  {trackTasks.map((task) => {
+                    const isAssignedToCurrentUser =
+                      task.assigned_user_id === profile.id;
+
+                    return (
+                    <div
+                      className={`px-5 py-4 ${
+                        isAssignedToCurrentUser ? selfAssignedTaskClass : ""
+                      }`}
+                      id={`task-${task.id}`}
+                      key={task.id}
+                    >
+                      {(() => {
+                        const taskComments = commentsByTask.get(task.id) ?? [];
+                        const taskCollaborators =
+                          collaboratorsByTask.get(task.id) ?? [];
+                        const assignedProfile = task.assigned_user_id
+                          ? profilesById.get(task.assigned_user_id)
+                          : undefined;
+                        const managerOwner = task.owning_department
+                          ? managerOwnersByDepartment.get(task.owning_department)
+                          : undefined;
+                        const managerOwnerProfile = managerOwner
+                          ? profilesById.get(managerOwner.user_id)
+                          : undefined;
+                        const eligibleManagers = (staffProfiles ?? []).filter(
+                          (staffProfile) =>
+                            staffProfile.role === "staff" &&
+                            staffProfile.department === task.owning_department &&
+                            isDepartmentManager(
+                              staffProfile.authority_level as Parameters<
+                                typeof isDepartmentManager
+                              >[0],
+                            ),
+                        );
+                        const eligibleAssignees = eligibleAssigneesForTask(
+                          task,
+                          staffProfiles ?? [],
+                        );
+
+                        return (
                       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                        <div>
+                        <div className="min-w-0 flex-1">
+                          {(() => {
+                            const taskEvents = eventsByTask.get(task.id) ?? [];
+
+                            return (
+                              <>
                           <div className="flex flex-wrap items-center gap-2">
                             {statusBadge(task.status)}
                             <h3 className="font-medium text-neutral-100">
                               {task.label_snapshot}
                             </h3>
+                            {isAssignedToCurrentUser ? selfAssignedChip() : null}
                           </div>
                           <p className="mt-2 font-mono text-xs text-neutral-500">
                             {task.workflow_step_key}
                           </p>
+                          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-3">
+                            {canManageTaskRouting ? (
+                              <details className="group/department rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <summary className="flex cursor-pointer list-none items-start justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                                  <div className="min-w-0">
+                                    <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                      Owning department
+                                    </p>
+                                    <p className="mt-1 truncate capitalize text-neutral-200">
+                                      {labelize(task.owning_department)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/department:hidden"
+                                  >
+                                    +
+                                  </span>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 hidden h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/department:flex"
+                                  >
+                                    -
+                                  </span>
+                                </summary>
+                                <form
+                                  action={changeProductionTaskDepartment}
+                                  className="mt-3 flex flex-col gap-2 border-t border-neutral-800 pt-3"
+                                >
+                                  <input
+                                    name="jobId"
+                                    type="hidden"
+                                    value={job.id}
+                                  />
+                                  <input
+                                    name="taskId"
+                                    type="hidden"
+                                    value={task.id}
+                                  />
+                                  <select
+                                    className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                    defaultValue={task.owning_department ?? ""}
+                                    name="owningDepartment"
+                                    required
+                                  >
+                                    <option value="">Choose department</option>
+                                    {ORG_DEPARTMENTS.map((department) => (
+                                      <option
+                                        key={department}
+                                        value={department}
+                                      >
+                                        {labelize(department)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <PendingSubmitButton
+                                    className="h-9 rounded-md border border-blue-400/40 bg-blue-400/10 px-3 text-sm text-blue-100"
+                                    pendingLabel="Updating"
+                                  >
+                                    Update department
+                                  </PendingSubmitButton>
+                                </form>
+                              </details>
+                            ) : (
+                              <div className="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                  Owning department
+                                </p>
+                                <p className="mt-1 capitalize text-neutral-200">
+                                  {labelize(task.owning_department)}
+                                </p>
+                              </div>
+                            )}
+                            {canManageTaskRouting ? (
+                              <details className="group/manager rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <summary className="flex cursor-pointer list-none items-start justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                                  <div className="min-w-0">
+                                    <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                      Owning manager
+                                    </p>
+                                    <p className="mt-1 truncate text-neutral-200">
+                                      {profileName(managerOwnerProfile)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/manager:hidden"
+                                  >
+                                    +
+                                  </span>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 hidden h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/manager:flex"
+                                  >
+                                    -
+                                  </span>
+                                </summary>
+                                <form
+                                  action={updateProductionTaskOwningManager}
+                                  className="mt-3 flex flex-col gap-2 border-t border-neutral-800 pt-3"
+                                >
+                                  <input
+                                    name="jobId"
+                                    type="hidden"
+                                    value={job.id}
+                                  />
+                                  <input
+                                    name="taskId"
+                                    type="hidden"
+                                    value={task.id}
+                                  />
+                                  <input
+                                    name="department"
+                                    type="hidden"
+                                    value={task.owning_department ?? ""}
+                                  />
+                                  <select
+                                    className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                    defaultValue={managerOwner?.user_id ?? ""}
+                                    name="assignedManagerId"
+                                  >
+                                    <option value="">Unclaimed</option>
+                                    {eligibleManagers.map((managerProfile) => (
+                                      <option
+                                        key={managerProfile.id}
+                                        value={managerProfile.id}
+                                      >
+                                        {profileName(managerProfile)} ·{" "}
+                                        {labelize(managerProfile.department)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {eligibleManagers.length === 0 ? (
+                                    <p className="text-xs leading-5 text-orange-200">
+                                      No active managers were found for{" "}
+                                      {labelize(task.owning_department)}.
+                                    </p>
+                                  ) : null}
+                                  <PendingSubmitButton
+                                    className="h-9 rounded-md border border-blue-400/40 bg-blue-400/10 px-3 text-sm text-blue-100"
+                                    disabled={
+                                      !task.owning_department ||
+                                      eligibleManagers.length === 0
+                                    }
+                                    pendingLabel="Updating"
+                                  >
+                                    Update manager
+                                  </PendingSubmitButton>
+                                </form>
+                              </details>
+                            ) : (
+                              <div className="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                  Owning manager
+                                </p>
+                                <p className="mt-1 text-neutral-200">
+                                  {profileName(managerOwnerProfile)}
+                                </p>
+                              </div>
+                            )}
+                            {canManageTaskRouting ? (
+                              <details className="group/assignee rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <summary className="flex cursor-pointer list-none items-start justify-between gap-3 [&::-webkit-details-marker]:hidden">
+                                  <div className="min-w-0">
+                                    <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                      Primary assignee
+                                    </p>
+                                    <p className="mt-1 truncate text-neutral-200">
+                                      {profileName(assignedProfile)}
+                                    </p>
+                                  </div>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/assignee:hidden"
+                                  >
+                                    +
+                                  </span>
+                                  <span
+                                    aria-hidden="true"
+                                    className="mt-3 hidden h-5 w-5 shrink-0 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/assignee:flex"
+                                  >
+                                    -
+                                  </span>
+                                </summary>
+                                <form
+                                  action={assignProductionTask}
+                                  className="mt-3 flex flex-col gap-2 border-t border-neutral-800 pt-3"
+                                >
+                                  <input
+                                    name="jobId"
+                                    type="hidden"
+                                    value={job.id}
+                                  />
+                                  <input
+                                    name="taskId"
+                                    type="hidden"
+                                    value={task.id}
+                                  />
+                                  <select
+                                    className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                    defaultValue={task.assigned_user_id ?? ""}
+                                    name="assignedUserId"
+                                    required
+                                  >
+                                    <option value="">Choose user</option>
+                                    {eligibleAssignees.map((staffProfile) => (
+                                      <option
+                                        key={staffProfile.id}
+                                        value={staffProfile.id}
+                                      >
+                                        {profileName(staffProfile)} ·{" "}
+                                        {labelize(staffProfile.department)}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  {eligibleAssignees.length === 0 ? (
+                                    <p className="text-xs leading-5 text-orange-200">
+                                      No active staff users were found for{" "}
+                                      {labelize(task.owning_department)}.
+                                    </p>
+                                  ) : null}
+                                  <PendingSubmitButton
+                                    className="h-9 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100"
+                                    disabled={eligibleAssignees.length === 0}
+                                    pendingLabel="Updating"
+                                  >
+                                    Update assignee
+                                  </PendingSubmitButton>
+                                </form>
+                              </details>
+                            ) : (
+                              <div className="rounded-md border border-neutral-800 bg-neutral-950 px-3 py-2">
+                                <p className="font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                  Primary assignee
+                                </p>
+                                <p className="mt-1 text-neutral-200">
+                                  {profileName(assignedProfile)}
+                                </p>
+                              </div>
+                            )}
+                          </div>
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             <span className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
                               Phase
@@ -454,43 +985,503 @@ export default async function ProductionJobDetailPage({
                               {task.blocked_reason}
                             </p>
                           ) : null}
+                          {task.outcome_label_snapshot ? (
+                            <p className="mt-2 rounded-md border border-emerald-400/20 bg-emerald-400/10 px-3 py-2 text-sm text-emerald-100">
+                              Decision: {task.outcome_label_snapshot}
+                              {task.outcome_note ? ` · ${task.outcome_note}` : ""}
+                            </p>
+                          ) : null}
                           {task.completed_at ? (
                             <p className="mt-2 text-xs text-neutral-500">
                               Completed {formatDateTime(task.completed_at)}
                             </p>
                           ) : null}
+                          <details className="group/additional mt-4 rounded-md border border-neutral-800 bg-neutral-950">
+                            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                              <span>Additional</span>
+                              <span
+                                aria-hidden="true"
+                                className="flex h-5 w-5 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/additional:hidden"
+                              >
+                                +
+                              </span>
+                              <span
+                                aria-hidden="true"
+                                className="hidden h-5 w-5 items-center justify-center rounded-md border border-neutral-700 bg-neutral-900 text-base font-semibold leading-none text-neutral-200 group-open/additional:flex"
+                              >
+                                -
+                              </span>
+                            </summary>
+                            <div className="flex flex-col gap-4 border-t border-neutral-800 p-3">
+                              {canManageTaskRouting ? (
+                                <div className="flex flex-col gap-3">
+                                  <details className="rounded-md border border-neutral-800 p-3">
+                                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                                      <span>Assign task owner</span>
+                                      <span className="text-xs text-neutral-500">
+                                        {profileName(assignedProfile)}
+                                      </span>
+                                    </summary>
+                                    <form
+                                      action={assignProductionTask}
+                                      className="mt-2 flex flex-col gap-2"
+                                    >
+                                      <input
+                                        name="jobId"
+                                        type="hidden"
+                                        value={job.id}
+                                      />
+                                      <input
+                                        name="taskId"
+                                        type="hidden"
+                                        value={task.id}
+                                      />
+                                      <select
+                                        className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                        defaultValue={task.assigned_user_id ?? ""}
+                                        name="assignedUserId"
+                                        required
+                                      >
+                                        <option value="">Choose user</option>
+                                        {eligibleAssignees.map((staffProfile) => (
+                                          <option
+                                            key={staffProfile.id}
+                                            value={staffProfile.id}
+                                          >
+                                            {profileName(staffProfile)} ·{" "}
+                                            {labelize(staffProfile.department)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {eligibleAssignees.length === 0 ? (
+                                        <p className="text-xs leading-5 text-orange-200">
+                                          No active staff users were found for{" "}
+                                          {labelize(task.owning_department)}.
+                                          Change the owning department or create a
+                                          user in that department.
+                                        </p>
+                                      ) : null}
+                                      <PendingSubmitButton
+                                        className="h-9 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100"
+                                        pendingLabel="Assigning"
+                                      >
+                                        Assign
+                                      </PendingSubmitButton>
+                                    </form>
+                                    {task.assigned_user_id ? (
+                                      <form
+                                        action={unassignProductionTask}
+                                        className="mt-3 flex flex-col gap-2 border-t border-neutral-800 pt-3 sm:flex-row sm:items-center sm:justify-between"
+                                      >
+                                        <input
+                                          name="jobId"
+                                          type="hidden"
+                                          value={job.id}
+                                        />
+                                        <input
+                                          name="taskId"
+                                          type="hidden"
+                                          value={task.id}
+                                        />
+                                        <p className="text-sm text-neutral-400">
+                                          Remove the current task owner.
+                                        </p>
+                                        <PendingSubmitButton
+                                          className="h-9 rounded-md border border-orange-400/40 bg-orange-400/10 px-3 text-sm text-orange-100"
+                                          pendingLabel="Unassigning"
+                                        >
+                                          Unassign
+                                        </PendingSubmitButton>
+                                      </form>
+                                    ) : null}
+                                  </details>
+                                  <details className="rounded-md border border-neutral-800 p-3">
+                                    <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                                      <span>Change owning department</span>
+                                      <span className="text-xs capitalize text-neutral-500">
+                                        {labelize(task.owning_department)}
+                                      </span>
+                                    </summary>
+                                    <form
+                                      action={changeProductionTaskDepartment}
+                                      className="mt-2 flex flex-col gap-2"
+                                    >
+                                      <input
+                                        name="jobId"
+                                        type="hidden"
+                                        value={job.id}
+                                      />
+                                      <input
+                                        name="taskId"
+                                        type="hidden"
+                                        value={task.id}
+                                      />
+                                      <select
+                                        className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                        defaultValue={task.owning_department ?? ""}
+                                        name="owningDepartment"
+                                        required
+                                      >
+                                        <option value="">Choose department</option>
+                                        {ORG_DEPARTMENTS.map((department) => (
+                                          <option
+                                            key={department}
+                                            value={department}
+                                          >
+                                            {labelize(department)}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      <PendingSubmitButton
+                                        className="h-9 rounded-md border border-blue-400/40 bg-blue-400/10 px-3 text-sm text-blue-100"
+                                        pendingLabel="Changing"
+                                      >
+                                        Change owner
+                                      </PendingSubmitButton>
+                                    </form>
+                                  </details>
+                                </div>
+                              ) : null}
+
+                              <details className="rounded-md border border-neutral-800 p-3">
+                                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                                  <span>Collaborators</span>
+                                  <span className="text-xs text-neutral-500">
+                                    {taskCollaborators.length} active
+                                  </span>
+                                </summary>
+                                <div className="mt-2 flex flex-col gap-2">
+                                  {taskCollaborators.map((collaborator) => (
+                                    <div
+                                      className="flex flex-col gap-2 rounded-md bg-neutral-900 p-2 text-sm sm:flex-row sm:items-center sm:justify-between"
+                                      key={collaborator.id}
+                                    >
+                                      <span>
+                                        {profileName(
+                                          profilesById.get(collaborator.user_id),
+                                        )}{" "}
+                                        <span className="text-neutral-500">
+                                          · {labelize(collaborator.collaborator_role)}
+                                        </span>
+                                      </span>
+                                      {canManageTaskRouting ? (
+                                        <form action={removeProductionTaskCollaborator}>
+                                          <input
+                                            name="jobId"
+                                            type="hidden"
+                                            value={job.id}
+                                          />
+                                          <input
+                                            name="taskId"
+                                            type="hidden"
+                                            value={task.id}
+                                          />
+                                          <input
+                                            name="collaboratorId"
+                                            type="hidden"
+                                            value={collaborator.id}
+                                          />
+                                          <PendingSubmitButton
+                                            className="h-8 rounded-md border border-neutral-700 px-2 text-xs text-neutral-200"
+                                            pendingLabel="Removing"
+                                          >
+                                            Remove
+                                          </PendingSubmitButton>
+                                        </form>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                  {taskCollaborators.length === 0 ? (
+                                    <p className="text-sm text-neutral-500">
+                                      No collaborators yet.
+                                    </p>
+                                  ) : null}
+                                </div>
+                                {canManageTaskRouting ? (
+                                  <form
+                                    action={addProductionTaskCollaborator}
+                                    className="mt-3 grid gap-2 lg:grid-cols-[1fr_160px_auto]"
+                                  >
+                                    <input
+                                      name="jobId"
+                                      type="hidden"
+                                      value={job.id}
+                                    />
+                                    <input
+                                      name="taskId"
+                                      type="hidden"
+                                      value={task.id}
+                                    />
+                                    <select
+                                      className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                      name="userId"
+                                      required
+                                    >
+                                      <option value="">Choose user</option>
+                                      {(staffProfiles ?? []).map((staffProfile) => (
+                                        <option
+                                          key={staffProfile.id}
+                                          value={staffProfile.id}
+                                        >
+                                          {profileName(staffProfile)}
+                                        </option>
+                                      ))}
+                                    </select>
+                                    <select
+                                      className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                      name="collaboratorRole"
+                                      required
+                                    >
+                                      <option value="watcher">Watcher</option>
+                                      <option value="contributor">Contributor</option>
+                                      <option value="reviewer">Reviewer</option>
+                                      <option value="manager_observer">
+                                        Manager observer
+                                      </option>
+                                    </select>
+                                    <PendingSubmitButton
+                                      className="h-9 rounded-md border border-neutral-700 px-3 text-sm text-neutral-100"
+                                      pendingLabel="Adding"
+                                    >
+                                      Add
+                                    </PendingSubmitButton>
+                                  </form>
+                                ) : null}
+                              </details>
+
+                              <details className="rounded-md border border-neutral-800 p-3">
+                                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                                  <span>Notes</span>
+                                  <span className="text-xs text-neutral-500">
+                                    {taskComments.length} notes
+                                  </span>
+                                </summary>
+                                <form
+                                  action={addProductionTaskComment}
+                                  className="mt-3 flex flex-col gap-2"
+                                >
+                                  <input
+                                    name="jobId"
+                                    type="hidden"
+                                    value={job.id}
+                                  />
+                                  <input
+                                    name="taskId"
+                                    type="hidden"
+                                    value={task.id}
+                                  />
+                                  <select
+                                    className="h-9 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100"
+                                    name="commentType"
+                                    defaultValue="comment"
+                                  >
+                                    <option value="comment">Note</option>
+                                    <option value="blocker">Blocker</option>
+                                    <option value="resolution">Resolution</option>
+                                    <option value="handoff">Handoff</option>
+                                    <option value="internal_note">
+                                      Internal note
+                                    </option>
+                                  </select>
+                                  <textarea
+                                    className="min-h-20 rounded-md border border-neutral-700 bg-neutral-950 px-2 py-2 text-sm text-neutral-100"
+                                    name="body"
+                                    placeholder="Add task context, handoff details, blocker detail, or resolution notes"
+                                    required
+                                  />
+                                  <PendingSubmitButton
+                                    className="h-9 rounded-md border border-neutral-700 px-3 text-sm text-neutral-100"
+                                    pendingLabel="Adding"
+                                  >
+                                    Add note
+                                  </PendingSubmitButton>
+                                </form>
+                                <div className="mt-4 flex flex-col gap-3">
+                                  {taskComments.slice(0, 5).map((comment) => (
+                                    <div
+                                      className="rounded-md bg-neutral-900 p-3"
+                                      key={comment.id}
+                                    >
+                                      <p className="text-sm leading-5 text-neutral-200">
+                                        {comment.body}
+                                      </p>
+                                      <p className="mt-2 text-xs capitalize text-neutral-500">
+                                        {labelize(comment.comment_type)} ·{" "}
+                                        {profileName(
+                                          comment.author_user_id
+                                            ? profilesById.get(comment.author_user_id)
+                                            : undefined,
+                                        )}{" "}
+                                        · {formatDateTime(comment.created_at)}
+                                      </p>
+                                    </div>
+                                  ))}
+                                  {taskComments.length === 0 ? (
+                                    <p className="text-sm text-neutral-500">
+                                      No notes yet.
+                                    </p>
+                                  ) : null}
+                                </div>
+                              </details>
+
+                              <details className="rounded-md border border-neutral-800 p-3">
+                                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium text-neutral-200 [&::-webkit-details-marker]:hidden">
+                                  <span>Task history</span>
+                                  <span className="text-xs text-neutral-500">
+                                    {taskEvents.length} events ·{" "}
+                                    {taskComments.length} notes
+                                  </span>
+                                </summary>
+                                <div className="mt-3 flex flex-col gap-3 border-t border-neutral-800 pt-3">
+                                  <div>
+                                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                      Structured events
+                                    </p>
+                                    <div className="mt-2 flex flex-col gap-2">
+                                      {taskEvents.slice(0, 8).map((event) => {
+                                        const fromState = eventStateLabel(
+                                          event.from_state_label_snapshot,
+                                          profilesById,
+                                        );
+                                        const toState = eventStateLabel(
+                                          event.to_state_label_snapshot,
+                                          profilesById,
+                                        );
+
+                                        return (
+                                          <div
+                                            className="rounded-md bg-neutral-900 p-3"
+                                            key={event.id}
+                                          >
+                                            <p className="text-sm font-medium capitalize text-neutral-100">
+                                              {event.event_type.replaceAll(
+                                                "_",
+                                                " ",
+                                              )}
+                                            </p>
+                                            <p className="mt-1 text-xs text-neutral-500">
+                                              {formatDateTime(event.created_at)} ·{" "}
+                                              {event.source} ·{" "}
+                                              {profileName(
+                                                event.actor_user_id
+                                                  ? profilesById.get(
+                                                      event.actor_user_id,
+                                                    )
+                                                  : undefined,
+                                              )}
+                                            </p>
+                                            {toState ? (
+                                              <p className="mt-2 text-sm text-neutral-300">
+                                                {fromState
+                                                  ? `${fromState} -> `
+                                                  : ""}
+                                                {toState}
+                                              </p>
+                                            ) : null}
+                                            {event.reason || event.note ? (
+                                              <p className="mt-2 text-sm leading-5 text-neutral-400">
+                                                {event.reason ?? event.note}
+                                              </p>
+                                            ) : null}
+                                          </div>
+                                        );
+                                      })}
+                                      {taskEvents.length === 0 ? (
+                                        <p className="text-sm text-neutral-500">
+                                          No structured events yet.
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-neutral-500">
+                                      Recent notes
+                                    </p>
+                                    <div className="mt-2 flex flex-col gap-2">
+                                      {taskComments.slice(0, 5).map((comment) => (
+                                        <div
+                                          className="rounded-md bg-neutral-900 p-3"
+                                          key={`history:${comment.id}`}
+                                        >
+                                          <p className="text-sm leading-5 text-neutral-200">
+                                            {comment.body}
+                                          </p>
+                                          <p className="mt-2 text-xs capitalize text-neutral-500">
+                                            {labelize(comment.comment_type)} ·{" "}
+                                            {profileName(
+                                              comment.author_user_id
+                                                ? profilesById.get(
+                                                    comment.author_user_id,
+                                                  )
+                                                : undefined,
+                                            )}{" "}
+                                            · {formatDateTime(comment.created_at)}
+                                          </p>
+                                        </div>
+                                      ))}
+                                      {taskComments.length === 0 ? (
+                                        <p className="text-sm text-neutral-500">
+                                          No notes yet.
+                                        </p>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </div>
+                              </details>
+                            </div>
+                          </details>
+                              </>
+                            );
+                          })()}
                         </div>
 
                         {canMutateTasks ? (
                           <div className="flex min-w-56 flex-col gap-2">
                             {task.status === "complete" ? (
-                              <form
-                                action={reopenProductionTask}
-                                className="flex justify-end"
-                              >
-                                <input
-                                  name="jobId"
-                                  type="hidden"
-                                  value={job.id}
-                                />
-                                <input
-                                  name="taskId"
-                                  type="hidden"
-                                  value={task.id}
-                                />
-                                <HoverText
-                                  text={hoverTextCopy.actions.reopenTask}
-                                >
-                                  <PendingSubmitButton
-                                    aria-label="Reopen completed task"
-                                    className="h-9 w-9 rounded-md border border-neutral-700 bg-neutral-950 text-base text-neutral-200 transition hover:border-orange-300/60 hover:text-orange-100"
-                                    pendingLabel="..."
-                                    title="Reopen completed task"
-                                  >
-                                    ↩
-                                  </PendingSubmitButton>
-                                </HoverText>
-                              </form>
+                              <div className="flex justify-end">
+                                {isArtworkNeededDecisionTask(task) &&
+                                task.outcome_key ? (
+                                  <HoverText text="Reopen this decision and clear its outcome. If artwork tasks were skipped because artwork was not needed, those tasks will be reopened.">
+                                    <ReopenDecisionModalButton
+                                      action={reopenProductionTask}
+                                      jobId={job.id}
+                                      priorOutcomeLabel={
+                                        task.outcome_label_snapshot
+                                      }
+                                      restoresSkippedTasks={
+                                        task.outcome_key === "artwork_not_needed"
+                                      }
+                                      taskId={task.id}
+                                    />
+                                  </HoverText>
+                                ) : (
+                                  <form action={reopenProductionTask}>
+                                    <input
+                                      name="jobId"
+                                      type="hidden"
+                                      value={job.id}
+                                    />
+                                    <input
+                                      name="taskId"
+                                      type="hidden"
+                                      value={task.id}
+                                    />
+                                    <HoverText
+                                      text={hoverTextCopy.actions.reopenTask}
+                                    >
+                                      <PendingSubmitButton
+                                        aria-label="Reopen completed task"
+                                        className="h-9 w-9 rounded-md border border-neutral-700 bg-neutral-950 text-base text-neutral-200 transition hover:border-orange-300/60 hover:text-orange-100"
+                                        pendingLabel="..."
+                                        title="Reopen completed task"
+                                      >
+                                        ↩
+                                      </PendingSubmitButton>
+                                    </HoverText>
+                                  </form>
+                                )}
+                              </div>
                             ) : null}
                             {task.status === "blocked" ? (
                               <form action={unblockProductionTask}>
@@ -512,55 +1503,69 @@ export default async function ProductionJobDetailPage({
                             {task.status !== "complete" &&
                             task.status !== "cancelled" &&
                             task.status !== "blocked" ? (
-                              <form
-                                action={completeProductionTask}
-                                className="flex gap-2"
-                              >
-                                <input name="jobId" type="hidden" value={job.id} />
-                                <input name="taskId" type="hidden" value={task.id} />
-                                <input
-                                  className="min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100 outline-none focus:border-emerald-300"
-                                  name="note"
-                                  placeholder="Completion note"
-                                />
+                              <>
                                 <HoverText
-                                  text={hoverTextCopy.actions.completeTask}
+                                  className="w-full"
+                                  text={
+                                    isArtworkNeededDecisionTask(task)
+                                      ? "Record whether artwork work is needed. This decision can skip downstream artwork tasks when artwork is not needed."
+                                      : hoverTextCopy.actions.completeTask
+                                  }
                                 >
-                                  <PendingSubmitButton
-                                    className="h-9 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100"
-                                    pendingLabel="Completing"
-                                  >
-                                    Complete
-                                  </PendingSubmitButton>
+                                  {isArtworkNeededDecisionTask(task) ? (
+                                    <TaskDecisionModalButton
+                                      action={resolveArtworkNeededProductionTask}
+                                      buttonClassName="h-9 w-full rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100 transition hover:border-emerald-300"
+                                      buttonLabel="Record decision"
+                                      decisionName="Is artwork needed?"
+                                      jobId={job.id}
+                                      modalTitle={task.label_snapshot}
+                                      options={artworkNeededDecisionOptions}
+                                      taskId={task.id}
+                                      title="Record artwork decision"
+                                    />
+                                  ) : (
+                                    <TaskStatusModalButton
+                                      action={completeProductionTask}
+                                      buttonClassName="h-9 w-full rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100 transition hover:border-emerald-300"
+                                      buttonLabel="Complete"
+                                      fieldName="note"
+                                      jobId={job.id}
+                                      modalTitle={`Complete ${task.label_snapshot}`}
+                                      placeholder="Optional completion note"
+                                      submitClassName="h-9 rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100 transition hover:border-emerald-300"
+                                      taskId={task.id}
+                                      title="Complete task"
+                                    />
+                                  )}
                                 </HoverText>
-                              </form>
-                            ) : null}
-                            {task.status !== "complete" &&
-                            task.status !== "cancelled" &&
-                            task.status !== "blocked" ? (
-                              <form action={blockProductionTask} className="flex gap-2">
-                                <input name="jobId" type="hidden" value={job.id} />
-                                <input name="taskId" type="hidden" value={task.id} />
-                                <input
-                                  className="min-w-0 flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-2 text-sm text-neutral-100 outline-none focus:border-red-300"
-                                  name="reason"
-                                  placeholder="Block reason"
-                                />
-                                <HoverText text={hoverTextCopy.actions.blockTask}>
-                                  <PendingSubmitButton
-                                    className="h-9 rounded-md border border-red-400/30 px-3 text-sm text-red-100"
-                                    pendingLabel="Blocking"
-                                  >
-                                    Block
-                                  </PendingSubmitButton>
+                                <HoverText
+                                  className="w-full"
+                                  text={hoverTextCopy.actions.blockTask}
+                                >
+                                  <TaskStatusModalButton
+                                    action={blockProductionTask}
+                                    buttonClassName="h-9 w-full rounded-md border border-red-400/30 px-3 text-sm text-red-100 transition hover:border-red-300"
+                                    buttonLabel="Block"
+                                    fieldName="reason"
+                                    jobId={job.id}
+                                    modalTitle={`Block ${task.label_snapshot}`}
+                                    placeholder="Optional block note"
+                                    submitClassName="h-9 rounded-md border border-red-400/30 px-3 text-sm text-red-100 transition hover:border-red-300"
+                                    taskId={task.id}
+                                    title="Block task"
+                                  />
                                 </HoverText>
-                              </form>
+                              </>
                             ) : null}
                           </div>
                         ) : null}
                       </div>
+                        );
+                      })()}
                     </div>
-                  ))}
+                    );
+                  })}
                   </div>
                 </details>
               );
@@ -568,82 +1573,6 @@ export default async function ProductionJobDetailPage({
           </section>
 
           <aside className="flex flex-col gap-5">
-            <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-5">
-              <HoverText text={hoverTextCopy.jobDetail.suggestions}>
-                <h2 className="text-lg font-semibold">
-                  Suggested next actions
-                </h2>
-              </HoverText>
-              <div className="mt-4 flex flex-col gap-3">
-                {suggestions.length === 0 ? (
-                  <p className="text-sm text-neutral-400">
-                    No suggestions yet. Complete prerequisite tasks to unlock
-                    the next action.
-                  </p>
-                ) : null}
-                {suggestions.slice(0, 8).map((suggestion) => (
-                  <div
-                    className="rounded-md border border-neutral-800 bg-neutral-950 p-3"
-                    key={`${suggestion.type}:${suggestion.workflowStepKey}`}
-                  >
-                    <p className="text-sm font-medium text-neutral-100">
-                      {suggestion.label}
-                    </p>
-                    <p className="mt-1 text-sm leading-5 text-neutral-400">
-                      {suggestion.prompt}
-                    </p>
-                    <p className="mt-2 font-mono text-xs text-neutral-500">
-                      {suggestion.track} · {suggestion.type}
-                    </p>
-                    {suggestion.type === "complete_milestone" &&
-                    suggestion.taskId &&
-                    canMutateTasks ? (
-                      <form action={completeProductionTask} className="mt-3">
-                        <input name="jobId" type="hidden" value={job.id} />
-                        <input
-                          name="taskId"
-                          type="hidden"
-                          value={suggestion.taskId}
-                        />
-                        <HoverText
-                          className="w-full"
-                          text={hoverTextCopy.actions.markSuggestedComplete}
-                        >
-                          <PendingSubmitButton
-                            className="h-9 w-full rounded-md border border-emerald-400/40 bg-emerald-400/10 px-3 text-sm text-emerald-100"
-                            pendingLabel="Completing"
-                          >
-                            Mark complete
-                          </PendingSubmitButton>
-                        </HoverText>
-                      </form>
-                    ) : null}
-                    {suggestion.type === "advance_phase" && canAdvance ? (
-                      <form action={advanceProductionPhase} className="mt-3">
-                        <input name="jobId" type="hidden" value={job.id} />
-                        <input
-                          name="toPhaseKey"
-                          type="hidden"
-                          value={suggestion.workflowStepKey}
-                        />
-                        <HoverText
-                          className="w-full"
-                          text={hoverTextCopy.actions.advancePhase}
-                        >
-                          <PendingSubmitButton
-                            className="h-9 w-full rounded-md border border-blue-400/40 bg-blue-400/10 px-3 text-sm text-blue-100"
-                            pendingLabel="Advancing"
-                          >
-                            Advance phase
-                          </PendingSubmitButton>
-                        </HoverText>
-                      </form>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            </section>
-
             <section className="rounded-lg border border-neutral-800 bg-neutral-900 p-5">
               <HoverText text={hoverTextCopy.jobDetail.eventTimeline}>
                 <h2 className="text-lg font-semibold">Event timeline</h2>

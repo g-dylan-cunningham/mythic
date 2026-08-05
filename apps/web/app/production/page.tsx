@@ -119,8 +119,8 @@ export default async function ProductionJobsPage() {
             >
               <h2 className="text-lg font-semibold">Lead command center</h2>
               <p className="mt-2 text-sm leading-6 text-neutral-400">
-                Queue health, blockers, estimates, receiving, fulfillment, and
-                jobs that need lead attention.
+                Queue health, blockers, estimates, and jobs that need lead
+                attention.
               </p>
             </Link>
           </HoverText>
@@ -141,18 +141,6 @@ export default async function ProductionJobsPage() {
               </Link>
             </HoverText>
           ) : null}
-          <HoverText className="block" text={hoverTextCopy.production.receivingCard}>
-            <Link
-              className="block rounded-lg border border-neutral-800 bg-neutral-900 p-5 transition hover:border-emerald-500/60 hover:bg-neutral-800"
-              href="/production/queues/receiving"
-            >
-              <h2 className="text-lg font-semibold">Receiving queue</h2>
-              <p className="mt-2 text-sm leading-6 text-neutral-400">
-                Apparel-side tasks that need receipt, exception handling, or
-                release toward production.
-              </p>
-            </Link>
-          </HoverText>
           <HoverText className="block" text={hoverTextCopy.links.blockedQueue}>
             <Link
               className="block rounded-lg border border-neutral-800 bg-neutral-900 p-5 transition hover:border-emerald-500/60 hover:bg-neutral-800"
