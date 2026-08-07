@@ -2,6 +2,10 @@ drop policy if exists "Operations users can read production jobs"
 on public.production_jobs;
 drop policy if exists "Owners admins and leads can manage production jobs"
 on public.production_jobs;
+drop policy if exists "Internal users can read production jobs"
+on public.production_jobs;
+drop policy if exists "Internal users can manage production jobs"
+on public.production_jobs;
 
 drop policy if exists "Operations users can read production tasks"
 on public.production_tasks;
@@ -9,12 +13,20 @@ drop policy if exists "Owners admins and leads can manage production tasks"
 on public.production_tasks;
 drop policy if exists "Workers can update assigned production tasks"
 on public.production_tasks;
+drop policy if exists "Internal users can read production tasks"
+on public.production_tasks;
+drop policy if exists "Internal users can manage production tasks"
+on public.production_tasks;
 
 drop policy if exists "Operations users can read production job events"
 on public.production_job_events;
 drop policy if exists "Owners admins and leads can create production job events"
 on public.production_job_events;
 drop policy if exists "Workers can create assigned task events"
+on public.production_job_events;
+drop policy if exists "Internal users can read production job events"
+on public.production_job_events;
+drop policy if exists "Internal users can create production job events"
 on public.production_job_events;
 
 create policy "Internal users can read production jobs"
