@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canUseOperations } from "@/lib/auth/roles";
+import { loadHeadlinePhases } from "@/lib/production-workflow/headline-phase";
 import {
   getProductionQueueDefinition,
   taskMatchesQueue,
@@ -25,7 +26,6 @@ type QueueTask = {
     due_date: string | null;
     job_name: string;
     priority: string;
-    current_phase_label_snapshot: string;
     printavo_order_number: string | null;
   } | null;
 };
@@ -91,7 +91,7 @@ export default async function ProductionQueuePage({
   const { data: tasks, error } = await supabase
     .from("production_tasks")
     .select(
-      "id,blocked_reason,label_snapshot,owning_department,status,workflow_step_key,production_jobs(id,customer_name,due_date,job_name,priority,current_phase_label_snapshot,printavo_order_number)",
+      "id,blocked_reason,label_snapshot,owning_department,status,workflow_step_key,production_jobs(id,customer_name,due_date,job_name,priority,printavo_order_number)",
     )
     .order("status", { ascending: true })
     .order("created_at", { ascending: true })
@@ -104,6 +104,12 @@ export default async function ProductionQueuePage({
 
   const queueTasks = (tasks ?? []).filter((task) =>
     taskMatchesQueue(task, queue),
+  );
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    queueTasks
+      .map((task) => task.production_jobs?.id)
+      .filter((jobId): jobId is string => Boolean(jobId)),
   );
 
   return (
@@ -196,7 +202,10 @@ export default async function ProductionQueuePage({
                     </p>
                   </td>
                   <td className="px-4 py-3 text-neutral-300">
-                    {task.production_jobs?.current_phase_label_snapshot ?? ""}
+                    {task.production_jobs
+                      ? (headlinePhasesByJob.get(task.production_jobs.id)
+                          ?.label ?? "No phase")
+                      : "No phase"}
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 font-mono text-neutral-300">
                     {formatDate(task.production_jobs?.due_date)}

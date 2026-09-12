@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canUseOperations, type OrgDepartment } from "@/lib/auth/roles";
+import { deriveHeadlinePhase } from "@/lib/production-workflow/headline-phase";
 import {
   labelForTrack,
   phasesForTask,
@@ -25,7 +26,6 @@ type WorkbenchTaskRow = {
   production_jobs: {
     id: string;
     customer_name: string | null;
-    current_phase_label_snapshot: string;
     due_date: string | null;
     job_name: string;
     priority: string;
@@ -175,11 +175,13 @@ function isReadyToStart(
 function TaskCard({
   blockers,
   collaborationRoles = [],
+  headlinePhaseLabel,
   isPrimaryForCurrentUser = false,
   task,
 }: {
   blockers?: WorkflowDependencyRow[];
   collaborationRoles?: string[];
+  headlinePhaseLabel: string;
   isPrimaryForCurrentUser?: boolean;
   task: WorkbenchTaskRow;
 }) {
@@ -215,7 +217,7 @@ function TaskCard({
           <p className="mt-2 text-xs uppercase tracking-[0.16em] text-neutral-500">
             {labelize(task.owning_department)} ·{" "}
             {labelForTrack(task.track_snapshot)} ·{" "}
-            {job?.current_phase_label_snapshot ?? "No phase"}
+            {job ? headlinePhaseLabel : "No phase"}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -289,7 +291,7 @@ export default async function ProductionWorkbenchPage() {
   const { data: tasks, error: tasksError } = await supabase
     .from("production_tasks")
     .select(
-      "id,assigned_user_id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,workflow_step_key,workflow_steps(sort_order),production_jobs(id,customer_name,current_phase_label_snapshot,due_date,job_name,priority,printavo_order_number,workflow_definition_id)",
+      "id,assigned_user_id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,workflow_step_key,workflow_steps(sort_order),production_jobs(id,customer_name,due_date,job_name,priority,printavo_order_number,workflow_definition_id)",
     )
     .not("status", "in", "(cancelled)")
     .order("created_at", { ascending: true })
@@ -342,6 +344,22 @@ export default async function ProductionWorkbenchPage() {
   const dependenciesByStep = dependencyMap(dependencies ?? []);
   const tasksByStep = taskMap(tasks ?? []);
   const collaborationRolesByTask = new Map<string, string[]>();
+  const tasksByJob = new Map<string, WorkbenchTaskRow[]>();
+
+  for (const task of tasks ?? []) {
+    const jobId = task.production_jobs?.id;
+
+    if (jobId) {
+      tasksByJob.set(jobId, [...(tasksByJob.get(jobId) ?? []), task]);
+    }
+  }
+
+  const headlinePhasesByJob = new Map(
+    Array.from(tasksByJob, ([jobId, jobTasks]) => [
+      jobId,
+      deriveHeadlinePhase(jobTasks),
+    ]),
+  );
 
   for (const collaboration of collaborations ?? []) {
     collaborationRolesByTask.set(collaboration.production_task_id, [
@@ -456,6 +474,10 @@ export default async function ProductionWorkbenchPage() {
               {myTasks.map((task) => (
                 <TaskCard
                   collaborationRoles={collaborationRolesByTask.get(task.id)}
+                  headlinePhaseLabel={
+                    headlinePhasesByJob.get(task.production_jobs?.id ?? "")
+                      ?.label ?? "Needs sourcing"
+                  }
                   isPrimaryForCurrentUser={task.assigned_user_id === profile.id}
                   key={task.id}
                   task={task}
@@ -483,7 +505,14 @@ export default async function ProductionWorkbenchPage() {
           ) : (
             <div className="grid gap-3">
               {readyUnassignedTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+                <TaskCard
+                  headlinePhaseLabel={
+                    headlinePhasesByJob.get(task.production_jobs?.id ?? "")
+                      ?.label ?? "Needs sourcing"
+                  }
+                  key={task.id}
+                  task={task}
+                />
               ))}
             </div>
           )}
@@ -520,6 +549,10 @@ export default async function ProductionWorkbenchPage() {
                     dependenciesByStep,
                     tasksByStep,
                   )}
+                  headlinePhaseLabel={
+                    headlinePhasesByJob.get(task.production_jobs?.id ?? "")
+                      ?.label ?? "Needs sourcing"
+                  }
                   key={task.id}
                   task={task}
                 />

@@ -10,6 +10,7 @@ import {
   canManageUsers,
   canServeAsDepartmentManager,
 } from "@/lib/auth/roles";
+import { loadHeadlinePhases } from "@/lib/production-workflow/headline-phase";
 import { createClient } from "@/utils/supabase/server";
 
 type JobRow = {
@@ -17,7 +18,6 @@ type JobRow = {
   customer_name: string | null;
   due_date: string | null;
   job_name: string;
-  current_phase_label_snapshot: string;
   printavo_order_number: string | null;
 };
 
@@ -81,7 +81,7 @@ export default async function OwnershipAdminPage() {
     supabase
       .from("production_jobs")
       .select(
-        "id,customer_name,due_date,job_name,current_phase_label_snapshot,printavo_order_number",
+        "id,customer_name,due_date,job_name,printavo_order_number",
       )
       .order("created_at", { ascending: false })
       .limit(40)
@@ -123,6 +123,10 @@ export default async function OwnershipAdminPage() {
       owner,
     ]),
   );
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    (jobs ?? []).map((job) => job.id),
+  );
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
@@ -158,7 +162,7 @@ export default async function OwnershipAdminPage() {
                   {job.printavo_order_number ?? "n/a"} · {formatDate(job.due_date)}
                 </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.16em] text-neutral-500">
-                  {job.current_phase_label_snapshot}
+                  {headlinePhasesByJob.get(job.id)?.label ?? "Needs sourcing"}
                 </p>
               </div>
 

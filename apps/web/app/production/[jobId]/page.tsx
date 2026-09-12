@@ -7,7 +7,6 @@ import { ReopenDecisionModalButton } from "@/app/production/[jobId]/reopen-decis
 import { TaskDecisionModalButton } from "@/app/production/[jobId]/task-decision-modal-button";
 import { TaskStatusModalButton } from "@/app/production/[jobId]/task-status-modal-button";
 import {
-  advanceProductionPhase,
   addProductionTaskCollaborator,
   addProductionTaskComment,
   assignProductionTask,
@@ -23,15 +22,13 @@ import {
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
   ORG_DEPARTMENTS,
-  canManageProduction,
   canManageUsers,
   canServeAsDepartmentManager,
   canUseOperations,
-  canViewOwnerProductionOverview,
   canWorkProductionTasks,
   isDepartmentManager,
 } from "@/lib/auth/roles";
-import { suggestNextActions } from "@/lib/production-workflow/engine";
+import { deriveHeadlinePhase } from "@/lib/production-workflow/headline-phase";
 import {
   labelForTrack,
   phasesForTask,
@@ -41,10 +38,6 @@ import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
 
 type Params = Promise<{ jobId: string }>;
-type SearchParams = Promise<{
-  advanceStage?: string;
-  toPhaseKey?: string;
-}>;
 
 type ProductionJobDetail = {
   id: string;
@@ -55,8 +48,6 @@ type ProductionJobDetail = {
   printavo_status_name: string | null;
   customer_name: string | null;
   job_name: string;
-  current_phase_key: string;
-  current_phase_label_snapshot: string;
   due_date: string | null;
   priority: string;
   difficulty_score: number | null;
@@ -325,15 +316,8 @@ function groupedByTask<T extends { production_task_id: string }>(rows: T[]) {
   return groups;
 }
 
-export default async function ProductionJobDetailPage({
-  params,
-  searchParams,
-}: {
-  params: Params;
-  searchParams: SearchParams;
-}) {
+export default async function ProductionJobDetailPage({ params }: { params: Params }) {
   const { jobId } = await params;
-  const query = await searchParams;
   const { profile } = await getCurrentProfile();
 
   if (!profile || !profile.is_active || !canUseOperations(profile.role)) {
@@ -348,12 +332,11 @@ export default async function ProductionJobDetailPage({
     { data: staffProfiles, error: profileError },
     { data: comments, error: commentError },
     { data: jobOwners, error: jobOwnerError },
-    suggestions,
   ] = await Promise.all([
     supabase
       .from("production_jobs")
       .select(
-        "id,workflow_definition_id,printavo_order_id,printavo_order_number,printavo_status_id,printavo_status_name,customer_name,job_name,current_phase_key,current_phase_label_snapshot,due_date,priority,difficulty_score,estimated_minutes",
+        "id,workflow_definition_id,printavo_order_id,printavo_order_number,printavo_status_id,printavo_status_name,customer_name,job_name,due_date,priority,difficulty_score,estimated_minutes",
       )
       .eq("id", jobId)
       .single<ProductionJobDetail>(),
@@ -397,7 +380,6 @@ export default async function ProductionJobDetailPage({
       .eq("owner_role", "department_manager")
       .is("removed_at", null)
       .returns<ProductionJobOwnerRow[]>(),
-    suggestNextActions(supabase, jobId),
   ]);
 
   if (jobError) {
@@ -429,7 +411,6 @@ export default async function ProductionJobDetailPage({
   }
 
   const canMutateTasks = canWorkProductionTasks(profile.role);
-  const canAdvance = canManageProduction(profile.role);
   const canManageTaskRouting =
     canManageUsers(profile.role) || isDepartmentManager(profile.authority_level);
   const taskIds = (tasks ?? []).map((task) => task.id);
@@ -468,66 +449,10 @@ export default async function ProductionJobDetailPage({
   const completeCount = (tasks ?? []).filter(
     (task) => task.status === "complete",
   ).length;
-  const stageAdvancePrompt =
-    query.advanceStage === "1" && query.toPhaseKey
-      ? suggestions.find(
-          (suggestion) =>
-            suggestion.type === "advance_phase" &&
-            suggestion.workflowStepKey === query.toPhaseKey,
-        )
-      : null;
+  const headlinePhase = deriveHeadlinePhase(tasks ?? []);
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
-      {stageAdvancePrompt && canAdvance ? (
-        <div
-          aria-labelledby="advance-stage-title"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/80 px-4"
-          role="dialog"
-        >
-          <div className="w-full max-w-md rounded-lg border border-neutral-700 bg-neutral-900 p-6 shadow-2xl">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
-              Stage ready
-            </p>
-            <h2
-              className="mt-3 text-xl font-semibold tracking-tight"
-              id="advance-stage-title"
-            >
-              Advance stage from current stage to next stage?
-            </h2>
-            <p className="mt-3 text-sm leading-6 text-neutral-400">
-              {job.current_phase_label_snapshot} to {stageAdvancePrompt.label}
-            </p>
-            <div className="mt-6 flex justify-end gap-3">
-              <HoverText text="Close this prompt and leave the job in its current stage.">
-                <Link
-                  className="h-10 rounded-md border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-neutral-500"
-                  href={`/production/${job.id}`}
-                >
-                  No
-                </Link>
-              </HoverText>
-              <form action={advanceProductionPhase}>
-                <input name="jobId" type="hidden" value={job.id} />
-                <input
-                  name="toPhaseKey"
-                  type="hidden"
-                  value={stageAdvancePrompt.workflowStepKey}
-                />
-                <HoverText text={hoverTextCopy.actions.advancePhase}>
-                  <PendingSubmitButton
-                    className="h-10 rounded-md border border-blue-400/40 bg-blue-400/10 px-4 text-sm font-medium text-blue-100 transition hover:border-blue-300"
-                    pendingLabel="Advancing"
-                  >
-                    Advance
-                  </PendingSubmitButton>
-                </HoverText>
-              </form>
-            </div>
-          </div>
-        </div>
-      ) : null}
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
         <header className="border-b border-neutral-800 pb-6">
           <div className="flex flex-wrap gap-4 text-sm text-neutral-400">
@@ -541,16 +466,6 @@ export default async function ProductionJobDetailPage({
                 Production
               </Link>
             </HoverText>
-            {canViewOwnerProductionOverview(profile.role) ? (
-              <HoverText text={hoverTextCopy.links.ownerOverview}>
-                <Link
-                  href="/production/owner-overview"
-                  className="hover:text-neutral-200"
-                >
-                  Owner overview
-                </Link>
-              </HoverText>
-            ) : null}
             <HoverText text={hoverTextCopy.jobDetail.printavoSync}>
               <Link
                 href="/reporting/printavo-sync"
@@ -561,7 +476,7 @@ export default async function ProductionJobDetailPage({
             </HoverText>
           </div>
           <p className="mt-6 text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
-            {job.current_phase_label_snapshot}
+            {headlinePhase.label}
           </p>
           <div className="mt-3 flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
             <div>
@@ -601,6 +516,7 @@ export default async function ProductionJobDetailPage({
               <div className="flex justify-end">
                 <ProductionJobMapModal
                   dependencies={dependencies ?? []}
+                  headlinePhaseLabel={headlinePhase.label}
                   job={job}
                   jobOwners={jobOwners ?? []}
                   profiles={staffProfiles ?? []}

@@ -87,41 +87,11 @@ type WorkflowDependency = {
   dependency_type: "required_before_start" | "required_before_complete";
 };
 
-type WorkflowTransition = {
-  id: string;
-  from_step_key: string | null;
-  to_step_key: string;
-  direction: "forward" | "backward";
-  allowed_roles: AppRole[];
-  requires_reason: boolean;
-};
-
 type ProductionJob = {
   id: string;
   printavo_order_id: number;
   workflow_definition_id: string;
   workflow_version: number;
-  current_phase_key: string;
-  current_phase_label_snapshot: string;
-};
-
-const phaseGateDependencies: Record<string, string[]> = {
-  "phase.awaiting_goods": ["apparel.order_apparel"],
-  "phase.goods_received": ["apparel.apparel_received"],
-  "phase.ready_for_production": [
-    "apparel.apparel_received",
-    "art.ready_to_burn_screens",
-    "prep.burn_screens",
-    "prep.confirm_print_locations",
-    "prep.confirm_ink_color_count",
-    "prep.confirm_garment_handling",
-    "prep.confirm_finishing_requirements",
-    "prep.estimate_difficulty_time",
-  ],
-  "phase.scheduled": ["prep.assign_press_day"],
-  "phase.in_production": ["production.in_production"],
-  "phase.finishing_qc": ["production.finishing_qc"],
-  "phase.production_complete": ["production.production_complete"],
 };
 
 type ProductionTask = {
@@ -207,17 +177,6 @@ type ProductionTaskCollaborator = {
   collaborator_role: ProductionTaskCollaboratorRole;
   added_by_user_id: string | null;
   removed_at: string | null;
-};
-
-export type ProductionWorkflowSuggestion = {
-  type: "start_task" | "complete_milestone" | "advance_phase";
-  productionJobId: string;
-  taskId?: string;
-  workflowStepKey: string;
-  label: string;
-  prompt: string;
-  track: string;
-  sortOrder: number;
 };
 
 export class ProductionWorkflowError extends Error {
@@ -335,7 +294,7 @@ async function getProductionJob(
   const { data, error } = await supabase
     .from("production_jobs")
     .select(
-      "id,printavo_order_id,workflow_definition_id,workflow_version,current_phase_key,current_phase_label_snapshot",
+      "id,printavo_order_id,workflow_definition_id,workflow_version",
     )
     .eq("id", productionJobId)
     .single<ProductionJob>();
@@ -430,22 +389,6 @@ function unmetDependenciesFor(
       (dependency) =>
         !isCompleteEnough(tasksByKey.get(dependency.depends_on_step_key)),
     );
-}
-
-function unmetPhaseGateDependencies(
-  phaseKey: string,
-  tasksByKey: Map<string, ProductionTask>,
-) {
-  return (phaseGateDependencies[phaseKey] ?? []).filter(
-    (workflowStepKey) => !isCompleteEnough(tasksByKey.get(workflowStepKey)),
-  );
-}
-
-export function phaseGateDependsOnTask(
-  phaseKey: string,
-  workflowStepKey: string,
-) {
-  return (phaseGateDependencies[phaseKey] ?? []).includes(workflowStepKey);
 }
 
 export async function writeProductionJobEvent(
@@ -884,18 +827,6 @@ export async function createProductionJobFromPrintavoOrder(
 ) {
   const productCategoryKey = input.productCategoryKey ?? "screen_printing";
   const workflow = await getActiveWorkflow(supabase, productCategoryKey);
-  const steps = await getWorkflowSteps(supabase, workflow.id);
-  const initialPhase =
-    steps.find((step) => step.key === "phase.needs_sourcing") ??
-    steps.find((step) => step.step_type === "phase");
-
-  if (!initialPhase) {
-    throw new ProductionWorkflowError(
-      "The active workflow has no phase step.",
-      "workflow_phase_missing",
-      { workflowDefinitionId: workflow.id },
-    );
-  }
 
   const statusId = orderStatusId(input.order);
   const statusName = orderStatusName(input.order);
@@ -911,8 +842,6 @@ export async function createProductionJobFromPrintavoOrder(
         product_category_id: workflow.product_category_id,
         workflow_definition_id: workflow.id,
         workflow_version: workflow.version,
-        current_phase_key: initialPhase.key,
-        current_phase_label_snapshot: initialPhase.label,
         customer_name: customerName(input.order),
         job_name: jobName(input.order),
         due_date: toDate(input.order.due_date),
@@ -924,7 +853,7 @@ export async function createProductionJobFromPrintavoOrder(
       { onConflict: "printavo_order_id", ignoreDuplicates: false },
     )
     .select(
-      "id,printavo_order_id,workflow_definition_id,workflow_version,current_phase_key,current_phase_label_snapshot",
+      "id,printavo_order_id,workflow_definition_id,workflow_version",
     )
     .single<ProductionJob>();
 
@@ -951,8 +880,6 @@ export async function createProductionJobFromPrintavoOrder(
     actorUserId: input.actorUserId ?? null,
     eventType: "job_synced_from_printavo",
     source: input.source ?? "printavo_sync",
-    toStateKey: job.current_phase_key,
-    toStateLabel: job.current_phase_label_snapshot,
     workflowDefinitionId: job.workflow_definition_id,
     workflowVersion: job.workflow_version,
     metadata: {
@@ -1413,250 +1340,4 @@ export async function unblockTask(
   });
 
   return updatedTask;
-}
-
-export async function canUserPerformTransition(
-  supabase: SupabaseClient,
-  input: {
-    productionJobId: string;
-    toPhaseKey: string;
-    userRole: AppRole;
-    reason?: string | null;
-  },
-) {
-  const job = await getProductionJob(supabase, input.productionJobId);
-  const { data: transition, error } = await supabase
-    .from("workflow_transitions")
-    .select("id,from_step_key,to_step_key,direction,allowed_roles,requires_reason")
-    .eq("workflow_definition_id", job.workflow_definition_id)
-    .eq("from_step_key", job.current_phase_key)
-    .eq("to_step_key", input.toPhaseKey)
-    .eq("is_active", true)
-    .maybeSingle<WorkflowTransition>();
-
-  assertNoError(error, "load_workflow_transition");
-
-  if (!transition) {
-    return {
-      allowed: false,
-      reason: "No active transition exists for this phase change.",
-      transition: null,
-    };
-  }
-
-  if (!transition.allowed_roles.includes(input.userRole)) {
-    return {
-      allowed: false,
-      reason: "User role is not allowed to perform this transition.",
-      transition,
-    };
-  }
-
-  if (transition.requires_reason && !input.reason) {
-    return {
-      allowed: false,
-      reason: "This transition requires a reason.",
-      transition,
-    };
-  }
-
-  const tasksByKey = new Map(
-    (await getJobTasks(supabase, job.id)).map((task) => [
-      task.workflow_step_key,
-      task,
-    ]),
-  );
-  const unmetPhaseGateKeys = unmetPhaseGateDependencies(
-    input.toPhaseKey,
-    tasksByKey,
-  );
-
-  if (unmetPhaseGateKeys.length > 0) {
-    return {
-      allowed: false,
-      reason:
-        "This phase cannot be advanced until its required workstream tasks are complete.",
-      transition,
-    };
-  }
-
-  return {
-    allowed: true,
-    reason: null,
-    transition,
-  };
-}
-
-export async function transitionProductionJobPhase(
-  supabase: SupabaseClient,
-  input: {
-    productionJobId: string;
-    toPhaseKey: string;
-    actorUserId: string;
-    userRole: AppRole;
-    reason?: string | null;
-    note?: string | null;
-    source?: WorkflowEventSource;
-  },
-) {
-  const job = await getProductionJob(supabase, input.productionJobId);
-  const permission = await canUserPerformTransition(supabase, {
-    productionJobId: input.productionJobId,
-    toPhaseKey: input.toPhaseKey,
-    userRole: input.userRole,
-    reason: input.reason,
-  });
-
-  if (!permission.allowed) {
-    throw new ProductionWorkflowError(
-      permission.reason ?? "Transition is not allowed.",
-      "transition_not_allowed",
-      {
-        productionJobId: input.productionJobId,
-        fromPhaseKey: job.current_phase_key,
-        toPhaseKey: input.toPhaseKey,
-        userRole: input.userRole,
-      },
-    );
-  }
-
-  const { data: phaseStep, error: phaseError } = await supabase
-    .from("workflow_steps")
-    .select("key,label")
-    .eq("workflow_definition_id", job.workflow_definition_id)
-    .eq("key", input.toPhaseKey)
-    .eq("step_type", "phase")
-    .single<{ key: string; label: string }>();
-
-  assertNoError(phaseError, "load_target_phase");
-
-  if (!phaseStep) {
-    throw new ProductionWorkflowError(
-      `Target phase ${input.toPhaseKey} was not found.`,
-      "target_phase_not_found",
-      { productionJobId: input.productionJobId, toPhaseKey: input.toPhaseKey },
-    );
-  }
-
-  const { data: updatedJob, error } = await supabase
-    .from("production_jobs")
-    .update({
-      current_phase_key: phaseStep.key,
-      current_phase_label_snapshot: phaseStep.label,
-    })
-    .eq("id", job.id)
-    .select(
-      "id,printavo_order_id,workflow_definition_id,workflow_version,current_phase_key,current_phase_label_snapshot",
-    )
-    .single<ProductionJob>();
-
-  assertNoError(error, "transition_production_job_phase");
-
-  await writeProductionJobEvent(supabase, {
-    productionJobId: job.id,
-    actorUserId: input.actorUserId,
-    eventType: "job_phase_transitioned",
-    source: input.source ?? "manual",
-    fromStateKey: job.current_phase_key,
-    fromStateLabel: job.current_phase_label_snapshot,
-    toStateKey: phaseStep.key,
-    toStateLabel: phaseStep.label,
-    workflowDefinitionId: job.workflow_definition_id,
-    workflowVersion: job.workflow_version,
-    reason: input.reason,
-    note: input.note,
-    metadata: {
-      transition_id: permission.transition?.id ?? null,
-      direction: permission.transition?.direction ?? null,
-    },
-  });
-
-  return updatedJob;
-}
-
-export async function suggestNextActions(
-  supabase: SupabaseClient,
-  productionJobId: string,
-): Promise<ProductionWorkflowSuggestion[]> {
-  // TODO: Revisit or remove this legacy suggestion engine. The task-level UI now
-  // owns most direct actions, and the job detail sidebar may become a read-only
-  // "Needs attention" summary instead of a second action surface.
-  const job = await getProductionJob(supabase, productionJobId);
-  const [steps, tasks, dependencies] = await Promise.all([
-    getWorkflowSteps(supabase, job.workflow_definition_id),
-    getJobTasks(supabase, productionJobId),
-    getDependencies(supabase, job.workflow_definition_id),
-  ]);
-  const stepsByKey = new Map(steps.map((step) => [step.key, step]));
-  const tasksByKey = new Map(tasks.map((task) => [task.workflow_step_key, task]));
-  const taskSuggestions = tasks
-    .filter((task) => task.status === "open" || task.status === "in_progress")
-    .filter(
-      (task) =>
-        unmetDependenciesFor(
-          task,
-          tasksByKey,
-          dependencies,
-          "required_before_start",
-        ).length === 0,
-    )
-    .map((task): ProductionWorkflowSuggestion => {
-      const step = stepsByKey.get(task.workflow_step_key);
-      const isMilestone = step?.step_type === "milestone";
-
-      return {
-        type: isMilestone ? "complete_milestone" : "start_task",
-        productionJobId,
-        taskId: task.id,
-        workflowStepKey: task.workflow_step_key,
-        label: task.label_snapshot,
-        prompt:
-          step?.suggested_prompt ??
-          (isMilestone
-            ? `Mark ${task.label_snapshot} complete?`
-            : `Start ${task.label_snapshot}?`),
-        track: task.track_snapshot,
-        sortOrder: step?.sort_order ?? 0,
-      };
-    });
-
-  const { data: transitions, error } = await supabase
-    .from("workflow_transitions")
-    .select("id,from_step_key,to_step_key,direction,allowed_roles,requires_reason")
-    .eq("workflow_definition_id", job.workflow_definition_id)
-    .eq("from_step_key", job.current_phase_key)
-    .eq("direction", "forward")
-    .eq("is_active", true)
-    .returns<WorkflowTransition[]>();
-
-  assertNoError(error, "load_forward_transitions");
-
-  const phaseSuggestions = (transitions ?? []).flatMap((transition) => {
-    const phaseStep = stepsByKey.get(transition.to_step_key);
-
-    if (!phaseStep) {
-      return [];
-    }
-
-    if (unmetPhaseGateDependencies(transition.to_step_key, tasksByKey).length > 0) {
-      return [];
-    }
-
-    return [
-      {
-        type: "advance_phase" as const,
-        productionJobId,
-        workflowStepKey: transition.to_step_key,
-        label: phaseStep.label,
-        prompt:
-          phaseStep.suggested_prompt ?? `Move job to ${phaseStep.label}?`,
-        track: phaseStep.track,
-        sortOrder: phaseStep.sort_order,
-      },
-    ];
-  });
-
-  return [...taskSuggestions, ...phaseSuggestions].sort(
-    (left, right) => left.sortOrder - right.sortOrder,
-  );
 }

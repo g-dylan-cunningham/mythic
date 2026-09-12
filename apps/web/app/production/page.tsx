@@ -2,10 +2,8 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
-import {
-  canUseOperations,
-  canViewOwnerProductionOverview,
-} from "@/lib/auth/roles";
+import { canUseOperations } from "@/lib/auth/roles";
+import { deriveHeadlinePhase } from "@/lib/production-workflow/headline-phase";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
 
@@ -16,12 +14,12 @@ type ProductionJobRow = {
   printavo_status_name: string | null;
   customer_name: string | null;
   job_name: string;
-  current_phase_label_snapshot: string;
   due_date: string | null;
   priority: string;
   created_at: string;
   production_tasks: Array<{
     status: string;
+    workflow_step_key: string;
   }>;
 };
 
@@ -55,7 +53,7 @@ export default async function ProductionJobsPage() {
   const { data: jobs, error } = await supabase
     .from("production_jobs")
     .select(
-      "id,printavo_order_id,printavo_order_number,printavo_status_name,customer_name,job_name,current_phase_label_snapshot,due_date,priority,created_at,production_tasks(status)",
+      "id,printavo_order_id,printavo_order_number,printavo_status_name,customer_name,job_name,due_date,priority,created_at,production_tasks(status,workflow_step_key)",
     )
     .order("created_at", { ascending: false })
     .limit(50)
@@ -90,16 +88,6 @@ export default async function ProductionJobsPage() {
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {canViewOwnerProductionOverview(profile.role) ? (
-              <HoverText text={hoverTextCopy.links.ownerOverview}>
-                <Link
-                  className="h-10 rounded-md border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-emerald-500/60"
-                  href="/production/owner-overview"
-                >
-                  Owner overview
-                </Link>
-              </HoverText>
-            ) : null}
             <HoverText text={hoverTextCopy.links.commandCenter}>
               <Link
                 className="h-10 rounded-md border border-neutral-700 px-4 py-2 text-sm font-medium text-neutral-200 transition hover:border-emerald-500/60"
@@ -124,23 +112,6 @@ export default async function ProductionJobsPage() {
               </p>
             </Link>
           </HoverText>
-          {canViewOwnerProductionOverview(profile.role) ? (
-            <HoverText
-              className="block"
-              text={hoverTextCopy.links.ownerOverview}
-            >
-              <Link
-                className="block rounded-lg border border-neutral-800 bg-neutral-900 p-5 transition hover:border-emerald-500/60 hover:bg-neutral-800"
-                href="/production/owner-overview"
-              >
-                <h2 className="text-lg font-semibold">Owner overview</h2>
-                <p className="mt-2 text-sm leading-6 text-neutral-400">
-                  Read-only Kanban-style board for scanning customers, order
-                  context, production phases, completion, and blockers.
-                </p>
-              </Link>
-            </HoverText>
-          ) : null}
           <HoverText className="block" text={hoverTextCopy.links.blockedQueue}>
             <Link
               className="block rounded-lg border border-neutral-800 bg-neutral-900 p-5 transition hover:border-emerald-500/60 hover:bg-neutral-800"
@@ -170,6 +141,7 @@ export default async function ProductionJobsPage() {
             <tbody className="divide-y divide-neutral-800 bg-neutral-950">
               {(jobs ?? []).map((job) => {
                 const summary = taskSummary(job.production_tasks);
+                const headlinePhase = deriveHeadlinePhase(job.production_tasks);
 
                 return (
                   <tr className="hover:bg-neutral-900" key={job.id}>
@@ -190,7 +162,7 @@ export default async function ProductionJobsPage() {
                       {job.customer_name ?? "Unassigned"}
                     </td>
                     <td className="px-4 py-3 text-neutral-200">
-                      {job.current_phase_label_snapshot}
+                      {headlinePhase.label}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 font-mono text-neutral-300">
                       {formatDate(job.due_date)}

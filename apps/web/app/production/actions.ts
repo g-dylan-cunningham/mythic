@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
-  canManageProduction,
   canManageUsers,
   canServeAsDepartmentManager,
   canUseOperations,
@@ -21,12 +20,9 @@ import {
   blockTask,
   changeTaskOwningDepartment,
   completeTask,
-  phaseGateDependsOnTask,
   removeTaskCollaborator,
   reopenTask,
   resolveArtworkNeededDecision,
-  suggestNextActions,
-  transitionProductionJobPhase,
   unblockTask,
   unassignTask,
   writeProductionJobEvent,
@@ -120,7 +116,6 @@ async function requireProductionAccess() {
 
 function revalidateJob(jobId: string) {
   revalidatePath("/production");
-  revalidatePath("/production/owner-overview");
   revalidatePath(`/production/${jobId}`);
 }
 
@@ -136,39 +131,13 @@ export async function completeProductionTask(formData: FormData) {
 
   const supabase = await createClient();
 
-  const completedTask = await completeTask(supabase, {
+  await completeTask(supabase, {
     actorUserId: user.id,
     note: note || null,
     taskId,
   });
 
-  if (!completedTask) {
-    throw new Error("Completed task was not returned.");
-  }
-
   revalidateJob(jobId);
-
-  if (canManageProduction(profile.role)) {
-    const nextPhase = (await suggestNextActions(supabase, jobId)).find(
-      (suggestion) => suggestion.type === "advance_phase",
-    );
-
-    if (
-      nextPhase &&
-      phaseGateDependsOnTask(
-        nextPhase.workflowStepKey,
-        completedTask.workflow_step_key,
-      )
-    ) {
-      const params = new URLSearchParams({
-        advanceStage: "1",
-        toPhaseKey: nextPhase.workflowStepKey,
-      });
-
-      redirect(`/production/${jobId}?${params.toString()}`);
-    }
-  }
-
   redirect(`/production/${jobId}`);
 }
 
@@ -184,40 +153,14 @@ export async function resolveArtworkNeededProductionTask(formData: FormData) {
   }
 
   const supabase = await createClient();
-  const resolvedTask = await resolveArtworkNeededDecision(supabase, {
+  await resolveArtworkNeededDecision(supabase, {
     actorUserId: user.id,
     note: note || null,
     outcomeKey,
     taskId,
   });
 
-  if (!resolvedTask) {
-    throw new Error("Resolved decision task was not returned.");
-  }
-
   revalidateJob(jobId);
-
-  if (outcomeKey !== "customer_followup_needed" && canManageProduction(profile.role)) {
-    const nextPhase = (await suggestNextActions(supabase, jobId)).find(
-      (suggestion) => suggestion.type === "advance_phase",
-    );
-
-    if (
-      nextPhase &&
-      phaseGateDependsOnTask(
-        nextPhase.workflowStepKey,
-        resolvedTask.workflow_step_key,
-      )
-    ) {
-      const params = new URLSearchParams({
-        advanceStage: "1",
-        toPhaseKey: nextPhase.workflowStepKey,
-      });
-
-      redirect(`/production/${jobId}?${params.toString()}`);
-    }
-  }
-
   redirect(`/production/${jobId}`);
 }
 
@@ -622,27 +565,6 @@ export async function removeProductionTaskCollaborator(formData: FormData) {
     collaboratorId,
     note: note || null,
     taskId,
-  });
-  revalidateJob(jobId);
-  redirect(`/production/${jobId}`);
-}
-
-export async function advanceProductionPhase(formData: FormData) {
-  const { profile, user } = await requireProductionAccess();
-  const jobId = formValue(formData, "jobId");
-  const toPhaseKey = formValue(formData, "toPhaseKey");
-
-  if (!canManageProduction(profile.role) || !jobId || !toPhaseKey) {
-    redirect(jobId ? `/production/${jobId}` : "/production");
-  }
-
-  const supabase = await createClient();
-
-  await transitionProductionJobPhase(supabase, {
-    actorUserId: user.id,
-    productionJobId: jobId,
-    toPhaseKey,
-    userRole: profile.role,
   });
   revalidateJob(jobId);
   redirect(`/production/${jobId}`);

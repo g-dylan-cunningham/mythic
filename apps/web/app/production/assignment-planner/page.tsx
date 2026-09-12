@@ -11,6 +11,7 @@ import {
   canUseOperations,
   isDepartmentManager,
 } from "@/lib/auth/roles";
+import { loadHeadlinePhases } from "@/lib/production-workflow/headline-phase";
 import { createClient } from "@/utils/supabase/server";
 
 type SearchParams = Promise<{
@@ -41,7 +42,7 @@ type PlannerTaskRow = {
     customer_name: string | null;
     due_date: string | null;
     job_name: string;
-    current_phase_label_snapshot: string;
+    headline_phase_label?: string;
     printavo_order_number: string | null;
   } | null;
 };
@@ -261,7 +262,7 @@ export default async function AssignmentPlannerPage({
   let tasksQuery = supabase
     .from("production_tasks")
     .select(
-      "id,assigned_user_id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,current_phase_label_snapshot,printavo_order_number)",
+      "id,assigned_user_id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,printavo_order_number)",
     )
     .not("status", "in", "(complete,cancelled,skipped)")
     .order("status", { ascending: true })
@@ -289,7 +290,24 @@ export default async function AssignmentPlannerPage({
   }
 
   const activeEmployees = employees ?? [];
-  const activeTasks = tasks ?? [];
+  const taskRows = tasks ?? [];
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    taskRows
+      .map((task) => task.production_jobs?.id)
+      .filter((jobId): jobId is string => Boolean(jobId)),
+  );
+  const activeTasks = taskRows.map((task) => ({
+    ...task,
+    production_jobs: task.production_jobs
+      ? {
+          ...task.production_jobs,
+          headline_phase_label:
+            headlinePhasesByJob.get(task.production_jobs.id)?.label ??
+            "Needs sourcing",
+        }
+      : null,
+  }));
   const unassignedTasks = activeTasks.filter((task) => !task.assigned_user_id);
   const assignedTasks = activeTasks.filter((task) => task.assigned_user_id);
   const blockedTasks = activeTasks.filter((task) => task.status === "blocked");

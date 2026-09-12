@@ -178,7 +178,7 @@ The first production workflow migration should likely include:
 - `workflow_definitions`
 - `workflow_steps`
 - `workflow_dependencies`
-- `workflow_transitions`
+- calculated headline phase rules in application code (no transition table)
 - `production_jobs`
 - `production_tasks`
 - `production_job_events`

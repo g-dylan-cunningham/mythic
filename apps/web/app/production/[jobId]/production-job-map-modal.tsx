@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 
 type ProductionMapJob = {
-  current_phase_label_snapshot: string;
   job_name: string;
 };
 
@@ -43,6 +42,7 @@ type ProductionMapDependency = {
 
 type ProductionJobMapModalProps = {
   dependencies: ProductionMapDependency[];
+  headlinePhaseLabel: string;
   job: ProductionMapJob;
   jobOwners: ProductionMapOwner[];
   profiles: ProductionMapProfile[];
@@ -92,6 +92,7 @@ function progressLabel(completeCount: number, totalCount: number) {
 
 export function ProductionJobMapModal({
   dependencies,
+  headlinePhaseLabel,
   job,
   jobOwners,
   profiles,
@@ -194,7 +195,7 @@ export function ProductionJobMapModal({
                   {job.job_name}
                 </h2>
                 <p className="mt-2 text-sm text-neutral-400">
-                  Current phase: {job.current_phase_label_snapshot}
+                  Current phase: {headlinePhaseLabel}
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">

@@ -5,6 +5,7 @@ import { PendingSubmitButton } from "@/app/components/pending-submit-button";
 import { runManualPrintavoProductionSync } from "@/app/reporting/printavo-sync/actions";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canViewReports } from "@/lib/auth/roles";
+import { loadHeadlinePhases } from "@/lib/production-workflow/headline-phase";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
 
@@ -28,7 +29,6 @@ type ProductionJobRow = {
   printavo_status_name: string | null;
   customer_name: string | null;
   job_name: string;
-  current_phase_label_snapshot: string;
   created_at: string;
 };
 
@@ -73,12 +73,16 @@ export default async function PrintavoProductionSyncPage({
     supabase
       .from("production_jobs")
       .select(
-        "id,printavo_order_id,printavo_order_number,printavo_status_name,customer_name,job_name,current_phase_label_snapshot,created_at",
+        "id,printavo_order_id,printavo_order_number,printavo_status_name,customer_name,job_name,created_at",
       )
       .order("created_at", { ascending: false })
       .limit(8)
       .returns<ProductionJobRow[]>(),
   ]);
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    (jobs ?? []).map((job) => job.id),
+  );
   const error = valueOf(params.error);
   const created = valueOf(params.created);
   const existing = valueOf(params.existing);
@@ -229,7 +233,8 @@ export default async function PrintavoProductionSyncPage({
                       {job.customer_name ?? ""}
                     </td>
                     <td className="px-3 py-2 text-neutral-200">
-                      {job.current_phase_label_snapshot}
+                      {headlinePhasesByJob.get(job.id)?.label ??
+                        "Needs sourcing"}
                     </td>
                     <td className="px-3 py-2 text-neutral-400">
                       {job.printavo_status_name ?? ""}

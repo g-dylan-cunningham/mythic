@@ -6,6 +6,10 @@ import {
   canManageUsers,
   isDepartmentManager,
 } from "@/lib/auth/roles";
+import {
+  type HeadlinePhase,
+  loadHeadlinePhases,
+} from "@/lib/production-workflow/headline-phase";
 import { createClient } from "@/utils/supabase/server";
 
 type DashboardTaskRow = {
@@ -20,7 +24,6 @@ type DashboardTaskRow = {
     customer_name: string | null;
     due_date: string | null;
     job_name: string;
-    current_phase_label_snapshot: string;
     printavo_order_number: string | null;
   } | null;
 };
@@ -193,9 +196,11 @@ function ownershipChip({
 
 function TaskList({
   emptyText,
+  headlinePhasesByJob,
   tasks,
 }: {
   emptyText: string;
+  headlinePhasesByJob: Map<string, HeadlinePhase>;
   tasks: DashboardTaskRow[];
 }) {
   if (tasks.length === 0) {
@@ -237,8 +242,10 @@ function TaskList({
               <p className="mt-2 text-xs uppercase tracking-[0.16em] text-neutral-500">
                 {labelize(task.owning_department)} ·{" "}
                 {labelize(task.track_snapshot)} ·{" "}
-                {task.production_jobs?.current_phase_label_snapshot ??
-                  "No phase"}
+                {task.production_jobs
+                  ? (headlinePhasesByJob.get(task.production_jobs.id)?.label ??
+                    "No phase")
+                  : "No phase"}
               </p>
               {task.blocked_reason ? (
                 <p className="mt-3 rounded-md border border-red-400/30 bg-red-400/10 px-3 py-2 text-sm text-red-100">
@@ -261,12 +268,14 @@ function TaskList({
 
 function JobGroupedTaskList({
   emptyText,
+  headlinePhasesByJob,
   ownerProfilesById,
   ownersByJobDepartment,
   tasks,
   userId,
 }: {
   emptyText: string;
+  headlinePhasesByJob: Map<string, HeadlinePhase>;
   ownerProfilesById: Map<string, DashboardOwnerProfileRow>;
   ownersByJobDepartment: Map<string, DashboardJobOwnerRow>;
   tasks: DashboardTaskRow[];
@@ -318,7 +327,9 @@ function JobGroupedTaskList({
                   {job?.printavo_order_number ?? "n/a"}
                 </p>
                 <p className="mt-2 text-xs uppercase tracking-[0.16em] text-neutral-500">
-                  {job?.current_phase_label_snapshot ?? "No phase"} ·{" "}
+                  {job
+                    ? (headlinePhasesByJob.get(job.id)?.label ?? "No phase")
+                    : "No phase"} ·{" "}
                   {jobTasks.length} task{jobTasks.length === 1 ? "" : "s"}
                   {blockedCount > 0 ? ` · ${blockedCount} blocked` : ""}
                 </p>
@@ -444,7 +455,7 @@ export default async function DashboardPage({
   const assignedTasksQuery = supabase
     .from("production_tasks")
     .select(
-      "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,current_phase_label_snapshot,printavo_order_number)",
+      "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,printavo_order_number)",
     )
     .eq("assigned_user_id", profile.id)
     .not("status", "in", "(complete,cancelled,skipped)")
@@ -459,7 +470,7 @@ export default async function DashboardPage({
           let query = supabase
             .from("production_tasks")
             .select(
-              "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,current_phase_label_snapshot,printavo_order_number)",
+              "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,printavo_order_number)",
             )
             .is("assigned_user_id", null)
             .not("status", "in", "(complete,cancelled,skipped)");
@@ -488,7 +499,7 @@ export default async function DashboardPage({
           let query = supabase
             .from("production_tasks")
             .select(
-              "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,current_phase_label_snapshot,printavo_order_number)",
+              "id,blocked_reason,label_snapshot,owning_department,status,track_snapshot,production_jobs(id,customer_name,due_date,job_name,printavo_order_number)",
             )
             .eq("status", "blocked");
 
@@ -538,6 +549,10 @@ export default async function DashboardPage({
         .filter(Boolean),
     ),
   ) as string[];
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    dashboardJobIds,
+  );
   const { data: jobOwners, error: jobOwnersError } =
     dashboardJobIds.length > 0
       ? await supabase
@@ -683,6 +698,7 @@ export default async function DashboardPage({
                   ? "No unassigned tasks are waiting on jobs you manage. Claim a job from the ownership queue or broaden visibility."
                   : "No unassigned tasks are ready to plan for this scope."
               }
+              headlinePhasesByJob={headlinePhasesByJob}
               ownerProfilesById={ownerProfilesById}
               ownersByJobDepartment={ownersByJobDepartment}
               tasks={planningTasks ?? []}
@@ -707,6 +723,7 @@ export default async function DashboardPage({
                   ? "No blocked tasks on jobs you manage."
                   : "No blocked tasks in this planning scope."
               }
+              headlinePhasesByJob={headlinePhasesByJob}
               ownerProfilesById={ownerProfilesById}
               ownersByJobDepartment={ownersByJobDepartment}
               tasks={blockedTasks ?? []}
@@ -726,6 +743,7 @@ export default async function DashboardPage({
           </div>
           <TaskList
             emptyText="No tasks are assigned to you yet. This is expected for accounts we are only using to validate role visibility."
+            headlinePhasesByJob={headlinePhasesByJob}
             tasks={assignedTasks ?? []}
           />
         </section>

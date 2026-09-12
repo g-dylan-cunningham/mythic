@@ -1,6 +1,6 @@
 # Next Steps: Medium Production Workflow Build
 
-Last updated: 2026-07-23
+Last updated: 2026-09-12
 
 ## At A Glance
 
@@ -72,7 +72,7 @@ Completed POC foundation:
 - Workflow engine helpers exist outside the UI.
 - Manual Printavo sync can create production jobs idempotently.
 - Minimal production UI exists for job list, job detail, task tracks,
-  suggestions, and event timeline.
+  calculated headline phases, and event timeline.
 
 Phase 7 expansion has started with the first medium-build slice:
 

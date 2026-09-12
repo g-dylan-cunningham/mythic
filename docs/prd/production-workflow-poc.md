@@ -1,13 +1,13 @@
 # PRD: Production Workflow POC
 
-Last updated: 2026-07-14
+Last updated: 2026-09-12
 
 ## Summary
 
 Build a proof of concept for Mythic's production workflow layer. Printavo remains
 the front-of-house system for quotes, approvals, payment, customer messaging,
 and customer-facing status. Mythic becomes the back-of-house system for
-production jobs, workflow tasks, dependencies, suggested advancement, and audit
+production jobs, workflow tasks, dependencies, calculated headline phases, and audit
 events.
 
 The POC should prove the architecture before the full medium build.
@@ -21,7 +21,7 @@ Prove this loop:
 3. Mythic assigns a versioned screen-printing workflow.
 4. Mythic generates workflow tasks across parallel tracks.
 5. Users complete/block/unblock tasks.
-6. Mythic suggests the next job state when dependencies are satisfied.
+6. Mythic calculates the job's headline phase from task milestones.
 7. Every meaningful change creates an immutable event.
 
 ## In Scope
@@ -32,7 +32,7 @@ Prove this loop:
 - Production jobs, tasks, dependencies, and event log.
 - Seeded/demo job flow before live Printavo sync.
 - Minimal job list and job detail UI.
-- Suggested advancement, not silent automation.
+- Headline phase calculated from task status, with no parallel mutable state.
 - Basic role rules for owner/admin/production lead/worker.
 
 ## Out Of Scope For POC
@@ -49,18 +49,17 @@ Prove this loop:
 
 ## Users
 
-- Owner/admin: configure and inspect workflow behavior, override state, review
-  event log.
+- Owner/admin: configure and inspect workflow behavior and review the event log.
 - Production lead: inspect production jobs, complete/check tasks, block/unblock
-  work, approve suggested advancement.
+  work, and manage assignments.
 - Production worker: complete assigned forward-moving tasks.
 
 ## Success Criteria
 
 - A seeded/demo screen-printing job renders with parallel task tracks.
-- Completing prerequisite tasks causes a suggested next action to appear.
+- Completing prerequisite tasks updates the calculated headline phase.
 - Completing/blocking/unblocking a task writes an event.
-- Backward/override moves are restricted to admin/owner or lead where allowed.
+- Reopening an earlier prerequisite moves the calculated phase backward.
 - A job records the workflow version it was created under.
 - Existing event logs remain readable even if workflow labels change later.
 
@@ -77,7 +76,7 @@ Initial tracks:
 - Production
 - Customer fulfillment
 
-Initial headline phases:
+Initial calculated headline phases:
 
 - `needs_sourcing`
 - `awaiting_goods`
@@ -87,8 +86,6 @@ Initial headline phases:
 - `in_production`
 - `finishing_qc`
 - `production_complete`
-- `blocked`
-- `cancelled`
 
 ## Open Questions
 

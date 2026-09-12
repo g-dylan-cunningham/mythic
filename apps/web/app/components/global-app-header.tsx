@@ -7,7 +7,6 @@ import {
   type AppRole,
   type AuthorityLevel,
   canUseOperations,
-  canViewOwnerProductionOverview,
   canViewReports,
   isDepartmentManager,
 } from "@/lib/auth/roles";
@@ -74,11 +73,6 @@ function viewLinks(profile: HeaderProfile | null) {
       href: "/production/ownership-admin",
       label: "Ownership admin",
       show: canViewReports(role),
-    },
-    {
-      href: "/production/owner-overview",
-      label: "Owner overview",
-      show: canViewOwnerProductionOverview(role),
     },
     {
       href: "/reporting",

@@ -54,7 +54,6 @@ function revalidateOwnership(jobId: string) {
   revalidatePath("/production/assignment-planner");
   revalidatePath("/production/ownership-queue");
   revalidatePath("/production/ownership-admin");
-  revalidatePath("/production/owner-overview");
   revalidatePath(`/production/${jobId}`);
 }
 

@@ -1,6 +1,6 @@
 # PRD: Production Workflow Data Model
 
-Last updated: 2026-07-14
+Last updated: 2026-09-12
 
 ## Summary
 
@@ -10,7 +10,9 @@ history after workflow changes.
 
 ## Design Principles
 
-- Store current operational state on `production_jobs` for simple querying.
+- Treat `production_tasks.status` as the operational source of truth.
+- Calculate the job's headline phase from completed or skipped task milestones;
+  do not persist a second mutable phase state.
 - Store every meaningful change in `production_job_events`.
 - Store task/checklist work in `production_tasks`.
 - Store workflow definitions in versioned database config.
@@ -94,22 +96,12 @@ Suggested fields:
 Example: `production.ready_for_production` depends on artwork approved, apparel
 received, screens ready, print specs confirmed, and estimate completed.
 
-### `workflow_transitions`
+### Derived Headline Phase
 
-Optional/configurable movement rules. For the first implementation, these may be
-seeded data rather than admin-editable UI.
-
-Suggested fields:
-
-- `id`
-- `workflow_definition_id`
-- `from_step_key`
-- `to_step_key`
-- `direction`: `forward`, `backward`
-- `allowed_roles`
-- `requires_reason`
-- `is_active`
-- `created_at`
+Headline phase is a read-time presentation calculated from the job's task
+statuses and workflow step keys. Completing or skipping the required milestone
+tasks advances the label; reopening an earlier prerequisite moves it backward.
+It has no independent transition table or manual phase action.
 
 ### `production_jobs`
 
@@ -127,8 +119,6 @@ Suggested fields:
 - `product_category_id`
 - `workflow_definition_id`
 - `workflow_version`
-- `current_phase_key`
-- `current_phase_label_snapshot`
 - `customer_name`
 - `job_name`
 - `due_date`

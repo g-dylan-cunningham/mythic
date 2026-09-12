@@ -16,6 +16,7 @@ import {
   canUseOperations,
   isDepartmentManager,
 } from "@/lib/auth/roles";
+import { loadHeadlinePhases } from "@/lib/production-workflow/headline-phase";
 import { createClient } from "@/utils/supabase/server";
 
 type SearchParams = Promise<{
@@ -28,10 +29,8 @@ type TaskJobRow = {
   production_jobs: {
     id: string;
     customer_name: string | null;
-    current_phase_key: string;
     due_date: string | null;
     job_name: string;
-    current_phase_label_snapshot: string;
     printavo_order_number: string | null;
   } | null;
 };
@@ -170,7 +169,7 @@ export default async function OwnershipQueuePage({
     supabase
       .from("production_tasks")
       .select(
-        "production_jobs(id,customer_name,current_phase_key,due_date,job_name,current_phase_label_snapshot,printavo_order_number)",
+        "production_jobs(id,customer_name,due_date,job_name,printavo_order_number)",
       )
       .eq("owning_department", department)
       .returns<TaskJobRow[]>(),
@@ -198,8 +197,13 @@ export default async function OwnershipQueuePage({
     departmentManagers.map((manager) => [manager.id, manager]),
   );
   const allDepartmentJobs = uniqueJobs(taskRows ?? []);
+  const headlinePhasesByJob = await loadHeadlinePhases(
+    supabase,
+    allDepartmentJobs.map((job) => job.id),
+  );
   const jobs = allDepartmentJobs.filter((job) => {
-    const completed = job.current_phase_key === "phase.production_complete";
+    const completed =
+      headlinePhasesByJob.get(job.id)?.key === "phase.production_complete";
 
     if (statusFilter === "all") {
       return true;
@@ -414,7 +418,8 @@ export default async function OwnershipQueuePage({
                           {job.printavo_order_number ?? "n/a"}
                         </p>
                         <p className="mt-2 text-xs uppercase tracking-[0.16em] text-neutral-500">
-                          {job.current_phase_label_snapshot} ·{" "}
+                          {headlinePhasesByJob.get(job.id)?.label ??
+                            "Needs sourcing"} ·{" "}
                           {formatDate(job.due_date)}
                         </p>
                       </div>

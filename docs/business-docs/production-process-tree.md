@@ -213,30 +213,27 @@ This is where Mythic can turn loose production knowledge into scheduling data.
 | Estimate difficulty / time | Convert specs into scheduling inputs. | Difficulty `3`, estimated `2.5` hours, press `ROQ-B`. |
 
 These tasks can happen while apparel is still awaiting delivery, but the job
-should not be suggested as `Ready for production` until the required prep tasks
+should not calculate as `Ready for production` until the required prep tasks
 and receiving tasks are complete.
 
-## Suggested Advancement Rules
+## Calculated Headline Phase Rules
 
-These rules should create suggestions, not silent automation, until the team
-trusts the workflow.
+These labels summarize task progress for presentation. They are calculated from
+the operational task statuses and are never advanced independently.
 
-| Suggested Move | Required Conditions | Suggested Prompt |
-| --- | --- | --- |
-| Create Mythic production job | Customer payment is received in Printavo | `Customer payment is received. Create production job?` |
-| Move to `Needs sourcing` | Production job exists and garment requirements are incomplete or unordered | `Garment requirements need sourcing. Open sourcing tasks?` |
-| Move to `Awaiting goods` | Supplier cart/order task is complete | `Apparel appears ordered. Move job to awaiting goods?` |
-| Update supplier apparel to `shipped` | Supplier shipment is confirmed | `Blank apparel appears shipped. Start receiving watch?` |
-| Update supplier apparel to `received` | Blank apparel has arrived and receiving/count-in is complete | `Blank apparel has been received. Release goods for production?` |
-| Move to `Ready to burn screens` | Artwork approved | `Artwork is approved. Move screen prep to ready?` |
-| Move to `Ready for production` | Apparel received, artwork approved, screens ready, print specs confirmed, estimate completed | `All production prerequisites look complete. Move to Ready For Production?` |
-| Move to `Scheduled` | Production lead assigns press/day/team | `Press and day assigned. Mark job scheduled?` |
-| Move to `In production` | Worker starts production task or lead manually starts job | `Production work has started. Mark job In Production?` |
-| Move to `Finishing / QC` | Production run task complete | `Run is complete. Move to finishing/QC?` |
-| Move to `Production complete` | Finishing/QC complete and no open blockers | `All production tasks are complete. Mark production complete?` |
-| Update customer fulfillment to `readyInventory` | Printed goods are complete and staged/packed | `Printed goods are ready. Mark fulfillment readyInventory?` |
-| Update customer fulfillment to `shipped` | Order has shipped or left Mythic for delivery | `Order has shipped. Mark customer fulfillment shipped?` |
-| Update customer fulfillment to `received` | Customer pickup/delivery is confirmed | `Customer has received the order. Mark fulfillment received?` |
+| Headline Phase | Required Completed/Skipped Milestone |
+| --- | --- |
+| `Needs sourcing` | Initial state before apparel ordering is complete |
+| `Awaiting goods` | Apparel ordered |
+| `Goods received` | Apparel received |
+| `Ready for production` | Apparel received, artwork and screens ready, print specs confirmed, estimate completed |
+| `Scheduled` | Press/day assigned |
+| `In production` | In-production milestone complete |
+| `Finishing / QC` | Finishing/QC milestone complete |
+| `Production complete` | Production-complete milestone complete |
+
+Supplier shipment and customer fulfillment remain task/track state. Blocking is
+shown as an alert on top of the calculated phase rather than replacing it.
 
 ## Blocked Rules
 

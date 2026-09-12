@@ -1,6 +1,6 @@
 # POC Implementation Plan
 
-Last updated: 2026-07-14
+Last updated: 2026-09-12
 
 ## Strategy
 
@@ -11,7 +11,7 @@ seeded workflow config
 → seeded production job
 → generated tasks
 → complete/block/unblock actions
-→ suggested next action
+→ calculated headline phase
 → immutable event log
 → Printavo sync hook later
 ```
@@ -56,14 +56,14 @@ Work items:
 - `completeTask(taskId, actorId)`
 - `blockTask(taskId, actorId, reason)`
 - `unblockTask(taskId, actorId)`
-- `suggestNextActions(jobId)`
+- `deriveHeadlinePhase(tasks)`
 - `writeProductionJobEvent(...)`
 - `canUserPerformAction(...)`
 
 Validation:
 
-- Completing prerequisites changes suggestions.
-- Blocking a task prevents readiness suggestions.
+- Completing or reopening prerequisites changes the headline phase.
+- Blocking a task remains visible without creating a second phase state.
 - Every action writes an event.
 
 ## Phase D: Minimal UI
@@ -73,7 +73,7 @@ Work items:
 - Production jobs index.
 - Job detail page.
 - Task tracks/checklist.
-- Suggested next action panel.
+- Calculated headline phase.
 - Event timeline.
 - Admin/debug area for workflow version and state.
 
@@ -82,7 +82,7 @@ Validation:
 - User can inspect demo job.
 - User can complete a task.
 - User can block/unblock a task.
-- Suggested actions update.
+- Headline phase updates with task state.
 - Event timeline is readable.
 
 ## Phase E: Printavo Sync POC
@@ -109,14 +109,14 @@ Questions:
 
 - Are the generated tasks correct?
 - Are dependencies useful?
-- Are suggestions helpful or noisy?
+- Are the calculated phase gates accurate and useful?
 - Does the event log answer "who changed what and when?"
 - What should move to v2?
 
 ## POC Exit Criteria
 
 - One screen-printing workflow version exists.
-- One job can move through task completion and suggested advancement.
+- One job can move through task completion with a calculated headline phase.
 - Events are written for all manual/system changes.
 - Workflow versioning is represented in job/task/event records.
 - Printavo sync path is understood, even if not fully automated.

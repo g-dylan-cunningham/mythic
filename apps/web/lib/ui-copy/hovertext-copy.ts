@@ -1,7 +1,5 @@
 export const hoverTextCopy = {
   actions: {
-    advancePhase:
-      "Move this job to the suggested next production phase. The app checks the configured transition rules and writes a timeline event.",
     blockTask:
       "Mark this task as blocked and save the reason to the event timeline. Use this when work cannot continue without help or a missing dependency.",
     completeTask:
@@ -29,11 +27,11 @@ export const hoverTextCopy = {
   },
   jobDetail: {
     eventTimeline:
-      "Chronological audit trail for this job. Task changes, phase moves, sync events, blockers, and system actions are written here.",
+      "Chronological audit trail for this job. Task changes, sync events, blockers, and system actions are written here.",
     printavoSync:
       "Open the manual Printavo sync/debug page. Useful when checking whether an eligible Printavo order created or updated a Mythic job.",
     taskTrack:
-      "A workstream is a worker-facing group of related tasks for this job. Workstreams can move in parallel, while the owner board shows one overall production phase.",
+      "A workstream is a worker-facing group of related tasks for this job. Workstreams can move in parallel, while the headline phase is calculated from completed task milestones.",
   },
   links: {
     commandCenter:
@@ -42,8 +40,6 @@ export const hoverTextCopy = {
       "Return to the main Mythic Operations dashboard.",
     jobDetail:
       "Open the full job detail page with workstreams, next actions, and event history.",
-    ownerOverview:
-      "Owner-only read-only board for scanning every production job by customer, order, current phase, progress, and blockers.",
     production:
       "Open the production job list.",
     queue:
@@ -60,8 +56,6 @@ export const hoverTextCopy = {
       "Start here for daily production lead review: queue health, due dates, blocked work, and estimate pressure.",
     estimate:
       "Estimated production effort for active jobs. These values are rough planning inputs until time tracking is added.",
-    ownerJobCard:
-      "Open this job to inspect its full task checklist, blocker reasons, suggested next actions, and event timeline.",
     taskProgress:
       "Completed task count compared with total generated tasks for this production job.",
     watchList:

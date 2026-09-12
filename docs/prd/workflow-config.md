@@ -1,6 +1,6 @@
 # PRD: Workflow Config And Versioning
 
-Last updated: 2026-07-14
+Last updated: 2026-09-12
 
 ## Summary
 
@@ -48,9 +48,8 @@ Code should enforce rules like:
 - A task can start when `required_before_start` dependencies are complete.
 - A task can complete when required completion dependencies are satisfied.
 - Non-admin users can only move forward through allowed actions.
-- Backward/override moves require a reason.
 - Every meaningful state change writes an event.
-- Suggestions are derived from completed dependencies.
+- Headline phases are derived from completed or skipped task milestones.
 
 Code should not hard-code business rules like:
 
@@ -97,19 +96,21 @@ Important task examples:
 - Fulfillment shipped/picked up
 - Fulfillment received by customer
 
-## Suggested Advancement Rules
+## Headline Phase Rules
 
-Suggestions should be shown when dependencies are satisfied, but important phase
-changes should require human confirmation in the POC.
+Headline phases are presentation labels derived from task state. Users change
+tasks, not the phase itself. This avoids a parallel state that can drift out of
+sync with operational work.
 
 Examples:
 
-- If the payment request / invoice-sent trigger is reached and no production
-  job exists, suggest creating a job.
-- If artwork approved, suggest opening screen prep.
-- If blank apparel received and screens/specs/estimate are ready, suggest Ready
-  for Production.
-- If production complete, suggest customer fulfillment readyInventory.
+- Before apparel ordering is complete: Needs sourcing.
+- After apparel ordering: Awaiting goods.
+- After apparel receiving: Goods received.
+- After receiving, artwork, screen, specification, and estimate milestones:
+  Ready for production.
+- Scheduling and production milestones then yield Scheduled, In production,
+  Finishing / QC, and Production complete.
 
 ## Future Category: Embroidery
 

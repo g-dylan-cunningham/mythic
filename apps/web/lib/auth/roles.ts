@@ -72,12 +72,6 @@ export function canManageUsers(role: AppRole | null | undefined) {
   return role === "owner" || role === "admin";
 }
 
-export function canViewOwnerProductionOverview(
-  role: AppRole | null | undefined,
-) {
-  return role === "owner";
-}
-
 export function canViewReports(role: AppRole | null | undefined) {
   return role === "owner" || role === "admin";
 }

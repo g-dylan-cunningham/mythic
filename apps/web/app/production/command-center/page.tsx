@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import { canManageProduction } from "@/lib/auth/roles";
+import { deriveHeadlinePhase } from "@/lib/production-workflow/headline-phase";
 import {
   productionQueues,
   taskMatchesQueue,
@@ -14,7 +15,6 @@ type CommandCenterJob = {
   id: string;
   job_name: string;
   customer_name: string | null;
-  current_phase_label_snapshot: string;
   due_date: string | null;
   priority: string;
   difficulty_score: number | null;
@@ -24,6 +24,7 @@ type CommandCenterJob = {
     blocked_reason: string | null;
     status: string;
     track_snapshot: string;
+    workflow_step_key: string;
   }>;
 };
 
@@ -78,7 +79,7 @@ export default async function ProductionCommandCenterPage() {
   const { data: jobs, error } = await supabase
     .from("production_jobs")
     .select(
-      "id,job_name,customer_name,current_phase_label_snapshot,due_date,priority,difficulty_score,estimated_minutes,production_tasks(assigned_role,blocked_reason,status,track_snapshot)",
+      "id,job_name,customer_name,due_date,priority,difficulty_score,estimated_minutes,production_tasks(assigned_role,blocked_reason,status,track_snapshot,workflow_step_key)",
     )
     .order("due_date", { ascending: true, nullsFirst: false })
     .limit(100)
@@ -89,7 +90,9 @@ export default async function ProductionCommandCenterPage() {
   }
 
   const activeJobs = (jobs ?? []).filter(
-    (job) => job.current_phase_label_snapshot !== "Production complete",
+    (job) =>
+      deriveHeadlinePhase(job.production_tasks).key !==
+      "phase.production_complete",
   );
   const tasks = activeJobs.flatMap((job) =>
     job.production_tasks.map((task) => ({
@@ -109,9 +112,11 @@ export default async function ProductionCommandCenterPage() {
   const phaseCounts = new Map<string, number>();
 
   for (const job of activeJobs) {
+    const headlinePhase = deriveHeadlinePhase(job.production_tasks);
+
     phaseCounts.set(
-      job.current_phase_label_snapshot,
-      (phaseCounts.get(job.current_phase_label_snapshot) ?? 0) + 1,
+      headlinePhase.label,
+      (phaseCounts.get(headlinePhase.label) ?? 0) + 1,
     );
   }
 
