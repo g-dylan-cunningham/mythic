@@ -5,4 +5,9 @@ node_modules/
 .env.*
 !.env.example
 !.env.local.example
+
+# Encrypted apps/web/.env.local backup and its local age decryption key.
+apps-web.env.local.age
+mythic-env-key.txt
+
 docs/business-docs/**/*.json
