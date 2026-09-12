@@ -781,7 +781,7 @@ export async function addTaskCollaborator(
     .select(
       "id,production_task_id,user_id,collaborator_role,added_by_user_id,removed_at",
     )
-    .single<ProductionTaskCollaborator>();
+    .maybeSingle<ProductionTaskCollaborator>();
 
   assertNoError(error, "add_task_collaborator");
 

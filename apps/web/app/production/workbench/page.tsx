@@ -41,6 +41,11 @@ type WorkflowDependencyRow = {
   workflow_definition_id: string;
 };
 
+type WorkbenchCollaboratorRow = {
+  collaborator_role: string;
+  production_task_id: string;
+};
+
 const terminalStatuses = new Set(["cancelled", "complete", "skipped"]);
 
 const statusClasses: Record<string, string> = {
@@ -169,9 +174,13 @@ function isReadyToStart(
 
 function TaskCard({
   blockers,
+  collaborationRoles = [],
+  isPrimaryForCurrentUser = false,
   task,
 }: {
   blockers?: WorkflowDependencyRow[];
+  collaborationRoles?: string[];
+  isPrimaryForCurrentUser?: boolean;
   task: WorkbenchTaskRow;
 }) {
   const job = task.production_jobs;
@@ -185,6 +194,19 @@ function TaskCard({
             <p className="font-semibold text-neutral-100">
               {task.label_snapshot}
             </p>
+            {isPrimaryForCurrentUser ? (
+              <span className="rounded-md border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-xs font-medium text-emerald-100">
+                Primary assignee
+              </span>
+            ) : null}
+            {collaborationRoles.map((role) => (
+              <span
+                className="rounded-md border border-sky-400/30 bg-sky-400/10 px-2 py-1 text-xs font-medium text-sky-100"
+                key={`${task.id}:${role}`}
+              >
+                Collaborator: {labelize(role)}
+              </span>
+            ))}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             {job?.job_name ?? "Production job"} ·{" "}
@@ -278,6 +300,17 @@ export default async function ProductionWorkbenchPage() {
     throw new Error(tasksError.message);
   }
 
+  const { data: collaborations, error: collaborationsError } = await supabase
+    .from("production_task_collaborators")
+    .select("production_task_id,collaborator_role")
+    .eq("user_id", profile.id)
+    .is("removed_at", null)
+    .returns<WorkbenchCollaboratorRow[]>();
+
+  if (collaborationsError) {
+    throw new Error(collaborationsError.message);
+  }
+
   const workflowDefinitionIds = Array.from(
     new Set(
       (tasks ?? [])
@@ -308,8 +341,21 @@ export default async function ProductionWorkbenchPage() {
       : allActiveTasks.filter((task) => task.owning_department === department);
   const dependenciesByStep = dependencyMap(dependencies ?? []);
   const tasksByStep = taskMap(tasks ?? []);
+  const collaborationRolesByTask = new Map<string, string[]>();
+
+  for (const collaboration of collaborations ?? []) {
+    collaborationRolesByTask.set(collaboration.production_task_id, [
+      ...(collaborationRolesByTask.get(collaboration.production_task_id) ?? []),
+      collaboration.collaborator_role,
+    ]);
+  }
+
   const myTasks = sortTasks(
-    allActiveTasks.filter((task) => task.assigned_user_id === profile.id),
+    allActiveTasks.filter(
+      (task) =>
+        task.assigned_user_id === profile.id ||
+        collaborationRolesByTask.has(task.id),
+    ),
   );
   const readyUnassignedTasks = sortTasks(
     departmentTasks.filter(
@@ -348,9 +394,9 @@ export default async function ProductionWorkbenchPage() {
             Hi, {profile.full_name || profile.email || "there"}.
           </h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-neutral-400">
-            Your practical production view: assigned work, ready unassigned work
-            in your department, and upcoming work that is waiting on earlier
-            steps.
+            Your practical production view: assigned work, collaboration work,
+            ready unassigned work in your department, and upcoming work that is
+            waiting on earlier steps.
           </p>
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             <span className="rounded-md border border-neutral-800 bg-neutral-900 px-3 py-2 capitalize text-neutral-300">
@@ -396,6 +442,9 @@ export default async function ProductionWorkbenchPage() {
               Assigned
             </p>
             <h2 className="mt-2 text-2xl font-semibold">My tasks</h2>
+            <p className="mt-2 text-sm text-neutral-400">
+              Work where you are the primary assignee or an active collaborator.
+            </p>
           </div>
           {myTasks.length === 0 ? (
             <EmptyState>
@@ -405,7 +454,12 @@ export default async function ProductionWorkbenchPage() {
           ) : (
             <div className="grid gap-3">
               {myTasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+                <TaskCard
+                  collaborationRoles={collaborationRolesByTask.get(task.id)}
+                  isPrimaryForCurrentUser={task.assigned_user_id === profile.id}
+                  key={task.id}
+                  task={task}
+                />
               ))}
             </div>
           )}
