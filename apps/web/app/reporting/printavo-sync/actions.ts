@@ -2,14 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
-import { canViewReports } from "@/lib/auth/roles";
-import { runPrintavoProductionSync } from "@/lib/printavo/production-sync";
+import { canAccessFeature } from "@/lib/features/feature-flags";
+import { syncPrintavoOrders } from "@/lib/printavo/production-sync";
 import { createClient } from "@/utils/supabase/server";
 
-export async function runManualPrintavoProductionSync() {
-  const { profile, user } = await getCurrentProfile();
+export async function runManualPrintavoFetch() {
+  const { profile } = await getCurrentProfile();
 
-  if (!profile || !profile.is_active || !canViewReports(profile.role)) {
+  if (!canAccessFeature(profile, "printavoFetching")) {
     redirect("/dashboard");
   }
 
@@ -17,15 +17,14 @@ export async function runManualPrintavoProductionSync() {
   let redirectUrl = "/reporting/printavo-sync";
 
   try {
-    const result = await runPrintavoProductionSync(supabase, {
-      actorUserId: user.id,
+    const result = await syncPrintavoOrders(supabase, {
       maxPages: 1,
       pageDelayMs: 2500,
       perPage: 10,
       retryBaseDelayMs: 5000,
     });
 
-    redirectUrl = `/reporting/printavo-sync?created=${result.createdJobs}&existing=${result.existingJobs}&scanned=${result.scannedOrders}&eligible=${result.eligibleOrders}&syncRunId=${result.syncRunId}`;
+    redirectUrl = `/reporting/printavo-sync?scanned=${result.scannedOrders}&snapshots=${result.snapshotsStored}&pages=${result.pagesFetched}&syncRunId=${result.syncRunId}`;
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Unknown Printavo sync error.";

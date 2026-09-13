@@ -1,8 +1,9 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import type { Profile } from "@/lib/auth/roles";
 
-export async function getCurrentProfile() {
+export const getCurrentProfile = cache(async () => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,4 +23,4 @@ export async function getCurrentProfile() {
     profile,
     user,
   };
-}
+});

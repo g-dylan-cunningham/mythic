@@ -6,7 +6,7 @@ import {
   testPrintavoConnection,
 } from "@/lib/printavo/client";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
-import { canViewReports } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import { formatCurrency } from "@/lib/formatters";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 
@@ -17,7 +17,7 @@ const csvReportGrandTotal = 1485316.06;
 export default async function PrintavoSalesReportPage() {
   const { profile } = await getCurrentProfile();
 
-  if (!profile || !profile.is_active || !canViewReports(profile.role)) {
+  if (!canAccessFeature(profile, "operationalReports")) {
     redirect("/dashboard");
   }
 

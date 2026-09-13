@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:retained": "MYTHIC_ENABLE_RETAINED_FEATURES=true next build",
     "start": "next start",
     "lint": "eslint",
     "test": "node --experimental-strip-types --test lib/**/*.test.mjs"

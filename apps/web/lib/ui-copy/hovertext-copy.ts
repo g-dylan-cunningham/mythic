@@ -5,7 +5,7 @@ export const hoverTextCopy = {
     completeTask:
       "Mark this task complete. If the task has unmet completion dependencies, the workflow engine will stop the update.",
     manualPrintavoSync:
-      "Run a small, safe Printavo sync now. The sync stores raw payloads, records a sync run, and creates production jobs when orders reach the payment-request trigger.",
+      "Fetch a small page of recent Printavo orders, preserve raw source snapshots, and record the result without creating production jobs or tasks.",
     reopenTask:
       "Reopen this completed task and clear its completion timestamp. Use this when the task was marked complete too early or needs more work.",
     reopenAndBlockTask:
@@ -29,7 +29,7 @@ export const hoverTextCopy = {
     eventTimeline:
       "Chronological audit trail for this job. Task changes, sync events, blockers, and system actions are written here.",
     printavoSync:
-      "Open the manual Printavo sync/debug page. Useful when checking whether an eligible Printavo order created or updated a Mythic job.",
+      "Open the admin-only Printavo fetching page to retrieve recent orders and inspect ingestion health.",
     taskTrack:
       "A workstream is a worker-facing group of related tasks for this job. Workstreams can move in parallel, while the headline phase is calculated from completed task milestones.",
   },

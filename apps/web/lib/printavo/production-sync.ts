@@ -24,6 +24,21 @@ export type PrintavoProductionSyncResult = {
   syncRunId: string;
 };
 
+export type PrintavoIngestionResult = {
+  orders: PrintavoOrder[];
+  pagesFetched: number;
+  scannedOrders: number;
+  snapshotsStored: number;
+  syncRunId: string;
+};
+
+type PrintavoIngestionOptions = {
+  maxPages?: number;
+  pageDelayMs?: number;
+  perPage?: number;
+  retryBaseDelayMs?: number;
+};
+
 const productionEligibilityStatusIds = new Set([
   56087, // Approved! - Payment Request Sent
 ]);
@@ -108,7 +123,7 @@ function errorMessage(error: unknown) {
     return error.message;
   }
 
-  return "Unknown Printavo production sync error.";
+  return "Unknown Printavo ingestion error.";
 }
 
 async function createSyncRun(
@@ -211,42 +226,27 @@ async function existingProductionOrderIds(
   return new Set((data ?? []).map((row) => row.printavo_order_id));
 }
 
-export async function runPrintavoProductionSync(
+export async function syncPrintavoOrders(
   supabase: SupabaseClient,
   {
-    actorUserId,
     maxPages = 1,
     pageDelayMs = 2000,
     perPage = 10,
-    productCategoryKey = "screen_printing",
     retryBaseDelayMs = 5000,
-  }: {
-    actorUserId?: string | null;
-    maxPages?: number;
-    pageDelayMs?: number;
-    perPage?: number;
-    productCategoryKey?: string;
-    retryBaseDelayMs?: number;
-  } = {},
-): Promise<PrintavoProductionSyncResult> {
+  }: PrintavoIngestionOptions = {},
+): Promise<PrintavoIngestionResult> {
   const syncRunId = await createSyncRun(supabase, {
     max_pages: maxPages,
     page_delay_ms: pageDelayMs,
     per_page: perPage,
-    product_category_key: productCategoryKey,
     retry_base_delay_ms: retryBaseDelayMs,
-    trigger_status_ids: Array.from(productionEligibilityStatusIds),
-    trigger_strategy:
-      "create production jobs when Printavo reaches payment-request-sent or is already paid",
+    strategy: "ingestion_only",
   });
-  const result: PrintavoProductionSyncResult = {
-    createdJobs: 0,
-    eligibleOrders: 0,
-    existingJobs: 0,
-    failedOrders: [],
+  const result: PrintavoIngestionResult = {
+    orders: [],
     pagesFetched: 0,
     scannedOrders: 0,
-    skippedIneligibleOrders: 0,
+    snapshotsStored: 0,
     syncRunId,
   };
 
@@ -272,74 +272,122 @@ export async function runPrintavoProductionSync(
       }
 
       result.scannedOrders += orders.length;
+      result.orders.push(...orders);
       await storeRawOrders(supabase, {
         orders,
         syncRunId,
       });
-
-      const eligibleOrders = orders.filter(isProductionEligiblePrintavoOrder);
-      result.eligibleOrders += eligibleOrders.length;
-      result.skippedIneligibleOrders += orders.length - eligibleOrders.length;
-
-      const existingOrderIds = await existingProductionOrderIds(
-        supabase,
-        eligibleOrders.map((order) => order.id),
-      );
-
-      for (const order of eligibleOrders) {
-        const existedBeforeSync = existingOrderIds.has(order.id);
-
-        try {
-          await createProductionJobFromPrintavoOrder(supabase, {
-            actorUserId,
-            order: toWorkflowOrder(order),
-            productCategoryKey,
-            source: "printavo_sync",
-          });
-
-          if (existedBeforeSync) {
-            result.existingJobs += 1;
-          } else {
-            result.createdJobs += 1;
-            existingOrderIds.add(order.id);
-          }
-        } catch (error) {
-          result.failedOrders.push({
-            error: errorMessage(error),
-            printavoOrderId: order.id,
-          });
-        }
-      }
+      result.snapshotsStored += orders.length;
     }
 
     await finishSyncRun(supabase, {
       recordsSeen: result.scannedOrders,
-      recordsUpserted: result.createdJobs,
-      status: result.failedOrders.length > 0 ? "failed" : "succeeded",
+      recordsUpserted: result.snapshotsStored,
+      status: "succeeded",
       syncRunId,
-      errorCode: result.failedOrders.length > 0 ? "order_sync_failed" : null,
-      errorContext:
-        result.failedOrders.length > 0
-          ? { failed_orders: result.failedOrders }
-          : {},
-      errorMessage:
-        result.failedOrders.length > 0
-          ? `${result.failedOrders.length} eligible Printavo order(s) failed.`
-          : null,
     });
 
     return result;
   } catch (error) {
     await finishSyncRun(supabase, {
       recordsSeen: result.scannedOrders,
-      recordsUpserted: result.createdJobs,
+      recordsUpserted: result.snapshotsStored,
       status: "failed",
       syncRunId,
-      errorCode: "printavo_sync_failed",
+      errorCode: "printavo_ingestion_failed",
       errorContext: {},
       errorMessage: errorMessage(error),
     });
 
     throw error;
   }
+}
+
+export async function materializeProductionJobs(
+  supabase: SupabaseClient,
+  {
+    actorUserId,
+    orders,
+    productCategoryKey = "screen_printing",
+  }: {
+    actorUserId?: string | null;
+    orders: PrintavoOrder[];
+    productCategoryKey?: string;
+  },
+) {
+  const eligibleOrders = orders.filter(isProductionEligiblePrintavoOrder);
+  const existingOrderIds = await existingProductionOrderIds(
+    supabase,
+    eligibleOrders.map((order) => order.id),
+  );
+  const result = {
+    createdJobs: 0,
+    eligibleOrders: eligibleOrders.length,
+    existingJobs: 0,
+    failedOrders: [] as PrintavoProductionSyncResult["failedOrders"],
+    skippedIneligibleOrders: orders.length - eligibleOrders.length,
+  };
+
+  for (const order of eligibleOrders) {
+    const existedBeforeSync = existingOrderIds.has(order.id);
+
+    try {
+      await createProductionJobFromPrintavoOrder(supabase, {
+        actorUserId,
+        order: toWorkflowOrder(order),
+        productCategoryKey,
+        source: "printavo_sync",
+      });
+
+      if (existedBeforeSync) {
+        result.existingJobs += 1;
+      } else {
+        result.createdJobs += 1;
+        existingOrderIds.add(order.id);
+      }
+    } catch (error) {
+      result.failedOrders.push({
+        error: errorMessage(error),
+        printavoOrderId: order.id,
+      });
+    }
+  }
+
+  return result;
+}
+
+// Retained production-suite entry point. The active rollout calls
+// syncPrintavoOrders() directly so ingestion cannot create hidden production work.
+export async function runPrintavoProductionSync(
+  supabase: SupabaseClient,
+  {
+    actorUserId,
+    maxPages = 1,
+    pageDelayMs = 2000,
+    perPage = 10,
+    productCategoryKey = "screen_printing",
+    retryBaseDelayMs = 5000,
+  }: PrintavoIngestionOptions & {
+    actorUserId?: string | null;
+    productCategoryKey?: string;
+  } = {},
+): Promise<PrintavoProductionSyncResult> {
+  const ingestion = await syncPrintavoOrders(supabase, {
+    maxPages,
+    pageDelayMs,
+    perPage,
+    retryBaseDelayMs,
+  });
+  const activation = await materializeProductionJobs(supabase, {
+    actorUserId,
+    orders: ingestion.orders,
+    productCategoryKey,
+  });
+
+  return {
+    ...activation,
+    pagesFetched: ingestion.pagesFetched,
+    scannedOrders: ingestion.scannedOrders,
+    syncRunId: ingestion.syncRunId,
+  };
 }

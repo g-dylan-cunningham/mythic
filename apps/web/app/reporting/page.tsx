@@ -2,14 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
-import { canViewReports } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import { reports } from "@/lib/reporting/reports";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 
 export default async function ReportingPage() {
   const { profile } = await getCurrentProfile();
 
-  if (!profile || !profile.is_active || !canViewReports(profile.role)) {
+  if (!canAccessFeature(profile, "operationalReports")) {
     redirect("/dashboard");
   }
 

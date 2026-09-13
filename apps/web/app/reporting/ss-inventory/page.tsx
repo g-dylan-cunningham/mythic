@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { HoverText } from "@/app/components/hover-text";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
-import { canViewReports } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import { formatCurrency } from "@/lib/formatters";
 import { getSsStyleInventoryReport } from "@/lib/ss/client";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
@@ -73,7 +73,7 @@ export default async function SsInventoryReportPage({
 }) {
   const { profile } = await getCurrentProfile();
 
-  if (!profile || !profile.is_active || !canViewReports(profile.role)) {
+  if (!canAccessFeature(profile, "ssInventory")) {
     redirect("/dashboard");
   }
 
@@ -95,11 +95,6 @@ export default async function SsInventoryReportPage({
             <HoverText text={hoverTextCopy.links.dashboard}>
               <Link href="/dashboard" className="hover:text-neutral-200">
                 Dashboard
-              </Link>
-            </HoverText>
-            <HoverText text={hoverTextCopy.links.reporting}>
-              <Link href="/reporting" className="hover:text-neutral-200">
-                Reporting
               </Link>
             </HoverText>
           </div>

@@ -1,14 +1,10 @@
 import Link from "next/link";
 import { HoverText } from "@/app/components/hover-text";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
-import { ViewsMenu } from "@/app/components/views-menu";
 import { signOut } from "@/app/login/actions";
 import {
   type AppRole,
   type AuthorityLevel,
-  canUseOperations,
-  canViewReports,
-  isDepartmentManager,
 } from "@/lib/auth/roles";
 import { hoverTextCopy } from "@/lib/ui-copy/hovertext-copy";
 import { createClient } from "@/utils/supabase/server";
@@ -37,56 +33,6 @@ function orgLabel(profile: HeaderProfile | null) {
   return `${profile.department.replaceAll("_", " ")} · ${profile.authority_level.replaceAll("_", " ")}`;
 }
 
-function viewLinks(profile: HeaderProfile | null) {
-  const role = profile?.role;
-
-  return [
-    { href: "/dashboard", label: "Dashboard", show: true },
-    { href: "/production", label: "Production", show: canUseOperations(role) },
-    {
-      href: "/production/workbench",
-      label: "Workbench",
-      show: canUseOperations(role),
-    },
-    {
-      href: "/production/command-center",
-      label: "Command center",
-      show: canUseOperations(role),
-    },
-    {
-      href: "/production/assignment-planner",
-      label: "Assignment planner",
-      show:
-        canViewReports(role) ||
-        (profile?.role === "staff" &&
-          isDepartmentManager(profile.authority_level)),
-    },
-    {
-      href: "/production/ownership-queue",
-      label: "Job ownership",
-      show:
-        canViewReports(role) ||
-        (profile?.role === "staff" &&
-          isDepartmentManager(profile.authority_level)),
-    },
-    {
-      href: "/production/ownership-admin",
-      label: "Ownership admin",
-      show: canViewReports(role),
-    },
-    {
-      href: "/reporting",
-      label: "Reports",
-      show: canViewReports(role),
-    },
-    {
-      href: "/reporting/printavo-sync",
-      label: "Printavo sync",
-      show: canViewReports(role),
-    },
-  ].filter((link) => link.show);
-}
-
 export async function GlobalAppHeader() {
   const supabase = await createClient();
   const {
@@ -102,7 +48,6 @@ export async function GlobalAppHeader() {
     .select("email,full_name,role,department,authority_level")
     .eq("id", user.id)
     .maybeSingle<HeaderProfile>();
-  const links = viewLinks(profile);
 
   return (
     <header className="sticky top-0 z-40 border-b border-neutral-800 bg-neutral-950/95 text-neutral-50 backdrop-blur">
@@ -117,7 +62,12 @@ export async function GlobalAppHeader() {
         </HoverText>
 
         <div className="flex min-w-0 items-center gap-3">
-          <ViewsMenu links={links} />
+          <Link
+            className="hidden text-sm text-neutral-400 hover:text-neutral-200 sm:block"
+            href="/dashboard"
+          >
+            Dashboard
+          </Link>
           <div className="min-w-0 text-right">
             <p className="truncate text-sm font-medium text-neutral-100">
               {displayName(profile, user.email)}

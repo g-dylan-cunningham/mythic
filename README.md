@@ -36,6 +36,15 @@ NEXT_PUBLIC_SUPABASE_TARGET=development
 Use `development` for the hosted Supabase dev project and `local` for the
 Docker-based local stack. See `apps/web/.env.local.example` for the full shape.
 
+The initial rollout uses local, server-side feature flags. Production workflow
+and nonessential reporting remain compiled but hidden by default. Set
+`MYTHIC_ENABLE_RETAINED_FEATURES=true` in a local or staging environment to
+regression-test those retained tools; do not use this setting as a substitute
+for role and department authorization.
+
+Use `npm --prefix apps/web run build:retained` to compile the application with
+the retained feature set explicitly enabled.
+
 Start the local Supabase stack:
 
 ```bash

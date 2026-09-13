@@ -6,11 +6,11 @@ import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
   canManageUsers,
   canServeAsDepartmentManager,
-  canUseOperations,
   canWorkProductionTasks,
   isDepartmentManager,
   type Profile,
 } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import {
   type ProductionTaskCollaboratorRole,
   type ProductionTaskCommentType,
@@ -107,7 +107,7 @@ function canManageTaskDepartment(
 async function requireProductionAccess() {
   const { profile, user } = await getCurrentProfile();
 
-  if (!profile || !profile.is_active || !canUseOperations(profile.role)) {
+  if (!profile || !canAccessFeature(profile, "productionSuite")) {
     redirect("/dashboard");
   }
 

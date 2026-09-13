@@ -8,9 +8,9 @@ import {
   type Profile,
   type OrgDepartment,
   canManageUsers,
-  canUseOperations,
   isDepartmentManager,
 } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import { assignTask } from "@/lib/production-workflow/engine";
 import { createClient } from "@/utils/supabase/server";
 
@@ -49,7 +49,7 @@ export async function assignTaskFromPlanner(formData: FormData) {
   if (
     !profile ||
     !profile.is_active ||
-    !canUseOperations(profile.role) ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canUsePlanner(profile) ||
     !taskId ||
     !assignedUserId
@@ -116,7 +116,7 @@ export async function batchAssignDepartmentTasksFromPlanner(formData: FormData) 
   if (
     !profile ||
     !profile.is_active ||
-    !canUseOperations(profile.role) ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canUsePlanner(profile) ||
     !assignedUserId ||
     !productionJobId ||
@@ -196,7 +196,7 @@ export async function assignSelectedTasksFromPlanner(formData: FormData) {
   if (
     !profile ||
     !profile.is_active ||
-    !canUseOperations(profile.role) ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canUsePlanner(profile) ||
     !assignedUserId ||
     !productionJobId ||

@@ -9,9 +9,9 @@ import {
   type OrgDepartment,
   type Profile,
   canManageUsers,
-  canUseOperations,
   isDepartmentManager,
 } from "@/lib/auth/roles";
+import { canAccessFeature } from "@/lib/features/feature-flags";
 import { writeProductionJobEvent } from "@/lib/production-workflow/engine";
 import { createClient } from "@/utils/supabase/server";
 
@@ -88,7 +88,7 @@ export async function claimProductionJobOwnership(formData: FormData) {
   if (
     !profile ||
     !profile.is_active ||
-    !canUseOperations(profile.role) ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canUseOwnership(profile) ||
     !productionJobId ||
     !department
@@ -151,7 +151,7 @@ export async function releaseProductionJobOwnership(formData: FormData) {
   if (
     !profile ||
     !profile.is_active ||
-    !canUseOperations(profile.role) ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canUseOwnership(profile) ||
     !productionJobId ||
     !department
@@ -208,6 +208,7 @@ export async function overrideProductionJobOwnership(formData: FormData) {
   if (
     !profile ||
     !profile.is_active ||
+    !canAccessFeature(profile, "productionSuite") ||
     !canManageUsers(profile.role) ||
     !productionJobId ||
     !department
