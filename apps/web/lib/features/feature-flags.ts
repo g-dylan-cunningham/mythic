@@ -1,6 +1,7 @@
 import type { Profile } from "@/lib/auth/roles";
 
 export const FEATURE_KEYS = [
+  "apparelOrdering",
   "ssInventory",
   "printavoFetching",
   "productionSuite",
@@ -14,6 +15,7 @@ const retainedFeaturesEnabled =
   process.env.MYTHIC_ENABLE_RETAINED_FEATURES === "true";
 
 export const featureFlags: FeatureFlags = Object.freeze({
+  apparelOrdering: true,
   ssInventory: true,
   printavoFetching: true,
   productionSuite: retainedFeaturesEnabled,
@@ -39,6 +41,8 @@ export function canAccessFeatureWithFlags(
   }
 
   switch (feature) {
+    case "apparelOrdering":
+      return false;
     case "ssInventory":
       return profile.role === "staff" && profile.department === "sales";
     case "productionSuite":

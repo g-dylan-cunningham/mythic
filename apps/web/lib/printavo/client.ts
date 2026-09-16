@@ -26,6 +26,7 @@ export type PrintavoOrder = {
   } | null;
   due_date?: string | null;
   formatted_custom_created_at_date?: string | null;
+  lineitems_attributes?: PrintavoLineItem[] | null;
   order_nickname?: string | null;
   order_subtotal?: number | string | null;
   order_total?: number | string | null;
@@ -42,6 +43,19 @@ export type PrintavoOrder = {
     name?: string | null;
   } | null;
   visual_id?: number | string | null;
+};
+
+export type PrintavoLineItem = {
+  category?: string | { name?: string | null } | null;
+  color?: string | null;
+  goods_status?: string | null;
+  id?: number | null;
+  size?: string | null;
+  style_description?: string | null;
+  style_number?: string | null;
+  total_quantities?: number | string | null;
+  unit_cost?: number | string | null;
+  [key: string]: unknown;
 };
 
 export type PrintavoOrdersResponse = {

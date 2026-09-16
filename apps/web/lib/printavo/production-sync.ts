@@ -7,6 +7,10 @@ import {
   fetchPrintavoOrdersPage,
   type PrintavoOrder,
 } from "@/lib/printavo/client";
+import {
+  isPaidPrintavoOrder,
+  printavoCustomerName,
+} from "@/lib/printavo/order-summary";
 
 type SyncStatus = "running" | "succeeded" | "failed";
 
@@ -43,35 +47,6 @@ const productionEligibilityStatusIds = new Set([
   56087, // Approved! - Payment Request Sent
 ]);
 
-function toNumber(value: number | string | null | undefined) {
-  if (typeof value === "number") {
-    return Number.isFinite(value) ? value : null;
-  }
-
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value);
-
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
-  return null;
-}
-
-function isPaidPrintavoOrder(order: PrintavoOrder) {
-  if (order.stats?.paid === true) {
-    return true;
-  }
-
-  const amountPaid = toNumber(order.amount_paid);
-  const amountOutstanding = toNumber(order.amount_outstanding);
-
-  if (amountPaid !== null && amountOutstanding !== null) {
-    return amountPaid > 0 && amountOutstanding <= 0;
-  }
-
-  return false;
-}
-
 function isProductionEligiblePrintavoOrder(order: PrintavoOrder) {
   if (isPaidPrintavoOrder(order)) {
     return true;
@@ -80,16 +55,6 @@ function isProductionEligiblePrintavoOrder(order: PrintavoOrder) {
   const statusId = order.orderstatus?.id ?? order.orderstatus_id ?? null;
 
   return statusId !== null && productionEligibilityStatusIds.has(statusId);
-}
-
-function customerName(order: PrintavoOrder) {
-  return (
-    order.customer?.name ??
-    order.customer?.full_name ??
-    order.customer?.company ??
-    order.user?.name ??
-    null
-  );
 }
 
 function toWorkflowOrder(order: PrintavoOrder): PrintavoOrderForProduction {
@@ -108,7 +73,7 @@ function toWorkflowOrder(order: PrintavoOrder): PrintavoOrderForProduction {
     paid_at: isPaidPrintavoOrder(order) ? new Date().toISOString() : null,
     status_id: order.orderstatus_id,
     customer: {
-      name: customerName(order),
+      name: printavoCustomerName(order),
     },
     user: order.user,
     metadata: {

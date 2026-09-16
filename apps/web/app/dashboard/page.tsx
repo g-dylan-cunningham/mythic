@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { PrintavoOrderList } from "@/app/components/printavo-order-list";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
 import {
   canAccessFeature,
   dashboardTools,
 } from "@/lib/features/feature-flags";
+import { getRecentPrintavoOrders } from "@/lib/printavo/recent-orders";
+import { createClient } from "@/utils/supabase/server";
 
 function labelize(value: string | null | undefined) {
   return value?.replaceAll("_", " ") ?? "Not assigned";
@@ -36,6 +39,10 @@ export default async function DashboardPage() {
   const availableTools = dashboardTools.filter((tool) =>
     canAccessFeature(profile, tool.feature),
   );
+  const canViewApparelOrders = canAccessFeature(profile, "apparelOrdering");
+  const recentPrintavoOrders = canViewApparelOrders
+    ? await getRecentPrintavoOrders(await createClient())
+    : null;
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
@@ -81,6 +88,10 @@ export default async function DashboardPage() {
             Signed in as {profile.email ?? user.email}.
           </p>
         </section>
+
+        {recentPrintavoOrders ? (
+          <PrintavoOrderList result={recentPrintavoOrders} />
+        ) : null}
 
         <section>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-400">

@@ -6,6 +6,7 @@ import {
 } from "./feature-flags.ts";
 
 const activeFlags = {
+  apparelOrdering: true,
   operationalReports: true,
   printavoFetching: true,
   productionSuite: true,
@@ -56,7 +57,26 @@ test("owners and admins can use enabled internal tools", () => {
       ),
       true,
     );
+    assert.equal(
+      canAccessFeatureWithFlags(
+        profile({ department: null, role }),
+        "apparelOrdering",
+        activeFlags,
+      ),
+      true,
+    );
   }
+});
+
+test("staff cannot start apparel ordering during the admin rollout", () => {
+  assert.equal(
+    canAccessFeatureWithFlags(
+      profile({ department: "sales", role: "staff" }),
+      "apparelOrdering",
+      activeFlags,
+    ),
+    false,
+  );
 });
 
 test("a disabled feature remains inaccessible regardless of permission", () => {
