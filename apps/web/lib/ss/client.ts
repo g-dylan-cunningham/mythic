@@ -36,6 +36,24 @@ type SsProduct = {
   warehouses?: SsWarehouse[] | null;
 };
 
+type SsStyle = {
+  brandName?: string | null;
+  partNumber?: string | null;
+  styleID?: number | string | null;
+  styleName?: string | null;
+  title?: string | null;
+};
+
+type SsCrossReference = {
+  brandName?: string | null;
+  colorName?: string | null;
+  sizeName?: string | null;
+  sku?: string | null;
+  skuID?: number | string | null;
+  styleName?: string | null;
+  yourSku?: string | null;
+};
+
 type SizeSortValue = {
   sizeName: string;
   sizeOrder: string;
@@ -55,6 +73,48 @@ export type SsStyleInventoryVariant = {
     warehouse: string;
   }[];
 };
+
+export type SsStyleCandidate = {
+  brandName: string;
+  partNumber: string;
+  styleID: string;
+  styleName: string;
+  title: string;
+};
+
+export type SsStyleSearchResult =
+  | {
+      ok: true;
+      candidates: SsStyleCandidate[];
+      remainingRequests: string | null;
+    }
+  | {
+      ok: false;
+      candidates: [];
+      error: string;
+    };
+
+export type SsSkuCrossReference = {
+  brandName: string;
+  colorName: string;
+  sizeName: string;
+  sku: string;
+  skuID: string;
+  styleName: string;
+  yourSku: string;
+};
+
+export type SsCrossReferenceResult =
+  | {
+      ok: true;
+      crossReferences: SsSkuCrossReference[];
+      remainingRequests: string | null;
+    }
+  | {
+      ok: false;
+      crossReferences: [];
+      error: string;
+    };
 
 export type SsStyleInventoryReport =
   | {
@@ -169,6 +229,168 @@ function looksLikeSku(value: string) {
 
 function matchesQuery(value: string, query: string) {
   return value.toLowerCase().includes(query.toLowerCase());
+}
+
+export async function searchSsStyles(
+  search: string,
+): Promise<SsStyleSearchResult> {
+  const config = getSsConfig();
+
+  if (!config.ok) {
+    return { ok: false, candidates: [], error: config.error };
+  }
+
+  const query = search.trim();
+
+  if (!query) {
+    return {
+      ok: false,
+      candidates: [],
+      error: "An S&S style search value is required.",
+    };
+  }
+
+  const url = new URL(`/${config.version}/styles/`, config.baseUrl);
+  url.searchParams.set("search", query);
+  url.searchParams.set("mediatype", "json");
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: basicAuth(config.accountNumber, config.apiKey),
+      },
+      cache: "no-store",
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
+
+    if (!response.ok || !Array.isArray(data)) {
+      return {
+        ok: false,
+        candidates: [],
+        error: response.ok
+          ? "S&S returned an unexpected styles response."
+          : `S&S returned ${response.status} ${response.statusText}.`,
+      };
+    }
+
+    return {
+      ok: true,
+      candidates: (data as SsStyle[]).flatMap((style) => {
+        const brandName = style.brandName?.trim();
+        const partNumber = style.partNumber?.trim();
+        const styleID = String(style.styleID ?? "").trim();
+        const styleName = style.styleName?.trim();
+
+        if (!brandName || !partNumber || !styleID || !styleName) {
+          return [];
+        }
+
+        return [
+          {
+            brandName,
+            partNumber,
+            styleID,
+            styleName,
+            title: style.title?.trim() || styleName,
+          },
+        ];
+      }),
+      remainingRequests: response.headers.get("x-rate-limit-remaining"),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      candidates: [],
+      error:
+        error instanceof Error ? error.message : "Unknown S&S request error.",
+    };
+  }
+}
+
+export async function getSsCrossReferences(): Promise<SsCrossReferenceResult> {
+  const config = getSsConfig();
+
+  if (!config.ok) {
+    return { ok: false, crossReferences: [], error: config.error };
+  }
+
+  const url = new URL(`/${config.version}/crossref/`, config.baseUrl);
+  url.searchParams.set("mediatype", "json");
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: basicAuth(config.accountNumber, config.apiKey),
+      },
+      cache: "no-store",
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
+
+    if (!response.ok || !Array.isArray(data)) {
+      return {
+        ok: false,
+        crossReferences: [],
+        error: response.ok
+          ? "S&S returned an unexpected CrossRef response."
+          : `S&S returned ${response.status} ${response.statusText}.`,
+      };
+    }
+
+    return {
+      ok: true,
+      crossReferences: (data as SsCrossReference[]).flatMap((reference) => {
+        const brandName = reference.brandName?.trim();
+        const colorName = reference.colorName?.trim();
+        const sizeName = reference.sizeName?.trim();
+        const sku = reference.sku?.trim();
+        const skuID = String(reference.skuID ?? "").trim();
+        const styleName = reference.styleName?.trim();
+        const yourSku = reference.yourSku?.trim();
+
+        if (
+          !brandName ||
+          !colorName ||
+          !sizeName ||
+          !sku ||
+          !skuID ||
+          !styleName ||
+          !yourSku
+        ) {
+          return [];
+        }
+
+        return [
+          {
+            brandName,
+            colorName,
+            sizeName,
+            sku,
+            skuID,
+            styleName,
+            yourSku,
+          },
+        ];
+      }),
+      remainingRequests: response.headers.get("x-rate-limit-remaining"),
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      crossReferences: [],
+      error:
+        error instanceof Error ? error.message : "Unknown S&S request error.",
+    };
+  }
 }
 
 export async function testSsInventoryConnection(): Promise<SsConnectionResult> {

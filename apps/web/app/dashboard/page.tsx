@@ -8,6 +8,20 @@ import {
 import { getRecentPrintavoOrders } from "@/lib/printavo/recent-orders";
 import { createClient } from "@/utils/supabase/server";
 
+type DashboardSearchParams = {
+  ordersAfter?: string | string[];
+  ordersBefore?: string | string[];
+};
+
+function getSearchParam(
+  searchParams: DashboardSearchParams,
+  key: keyof DashboardSearchParams,
+) {
+  const value = searchParams[key];
+
+  return Array.isArray(value) ? value[0] : value;
+}
+
 function labelize(value: string | null | undefined) {
   return value?.replaceAll("_", " ") ?? "Not assigned";
 }
@@ -19,7 +33,11 @@ function displayName(profile: {
   return profile.full_name || profile.email || "there";
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) {
   const { profile, user } = await getCurrentProfile();
 
   if (!profile?.is_active) {
@@ -40,13 +58,18 @@ export default async function DashboardPage() {
     canAccessFeature(profile, tool.feature),
   );
   const canViewApparelOrders = canAccessFeature(profile, "apparelOrdering");
+  const resolvedSearchParams = await searchParams;
   const recentPrintavoOrders = canViewApparelOrders
-    ? await getRecentPrintavoOrders(await createClient())
+    ? await getRecentPrintavoOrders(await createClient(), {
+        after: getSearchParam(resolvedSearchParams, "ordersAfter"),
+        before: getSearchParam(resolvedSearchParams, "ordersBefore"),
+        pageSize: 10,
+      })
     : null;
 
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-50">
-      <div className="mx-auto flex max-w-5xl flex-col gap-8 px-6 py-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
         <header className="border-b border-neutral-800 pb-6">
           <p className="text-sm font-medium uppercase tracking-[0.2em] text-emerald-400">
             Dashboard

@@ -476,6 +476,29 @@ export async function fetchPrintavoOrdersPage({
   });
 }
 
+export async function fetchPrintavoOrder(orderId: number) {
+  const config = getPrintavoConfig();
+
+  if (!config.ok) {
+    throw new Error(config.error);
+  }
+
+  const url = new URL(
+    `/api/${config.version}/orders/${orderId}`,
+    config.baseUrl,
+  );
+  url.searchParams.set("email", config.email);
+  url.searchParams.set("token", config.token);
+
+  const order = await fetchPrintavoJson<PrintavoOrder>(url);
+
+  if (order.id !== orderId) {
+    throw new Error("Printavo returned a different order than requested.");
+  }
+
+  return order;
+}
+
 export async function getPrintavoSalesReport({
   endDate = "2026-06-30",
   maxPages = 80,
