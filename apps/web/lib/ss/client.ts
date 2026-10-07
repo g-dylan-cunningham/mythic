@@ -1,3 +1,8 @@
+import {
+  buildSsPrintavoOrderRequest,
+  type SsPrintavoOrderInput,
+} from "@/lib/ss/order-request";
+
 type SsConnectionResult =
   | {
       ok: true;
@@ -53,6 +58,46 @@ type SsCrossReference = {
   styleName?: string | null;
   yourSku?: string | null;
 };
+
+type SsPlacedOrderLine = {
+  brandName?: string | null;
+  colorName?: string | null;
+  lineNumber?: number | null;
+  price?: number | string | null;
+  qtyOrdered?: number | null;
+  sizeName?: string | null;
+  sku?: string | null;
+  skuID?: number | string | null;
+  styleName?: string | null;
+  title?: string | null;
+};
+
+export type SsPlacedOrder = {
+  guid: string;
+  invoiceNumber: string;
+  lines: SsPlacedOrderLine[];
+  orderNumber: string;
+  orderStatus: string;
+  poNumber: string;
+  total: number;
+  warehouseAbbr: string;
+};
+
+export type SsPlaceOrderResult =
+  | {
+      endpoint: string;
+      ok: true;
+      orders: SsPlacedOrder[];
+      remainingRequests: string | null;
+      status: number;
+    }
+  | {
+      data?: unknown;
+      endpoint: string | null;
+      error: string;
+      ok: false;
+      status: number | null;
+    };
 
 type SizeSortValue = {
   sizeName: string;
@@ -229,6 +274,103 @@ function looksLikeSku(value: string) {
 
 function matchesQuery(value: string, query: string) {
   return value.toLowerCase().includes(query.toLowerCase());
+}
+
+function isSsPlacedOrder(value: unknown): value is SsPlacedOrder {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const order = value as Record<string, unknown>;
+
+  return (
+    typeof order.guid === "string" &&
+    order.guid.length > 0 &&
+    typeof order.orderNumber === "string" &&
+    order.orderNumber.length > 0 &&
+    typeof order.poNumber === "string" &&
+    order.poNumber.length > 0
+  );
+}
+
+export async function placeSsPrintavoOrder(
+  input: SsPrintavoOrderInput,
+): Promise<SsPlaceOrderResult> {
+  const config = getSsConfig();
+
+  if (!config.ok) {
+    return {
+      endpoint: null,
+      error: config.error,
+      ok: false,
+      status: null,
+    };
+  }
+
+  let requestBody;
+
+  try {
+    requestBody = buildSsPrintavoOrderRequest(input);
+  } catch (error) {
+    return {
+      endpoint: null,
+      error:
+        error instanceof Error ? error.message : "Invalid S&S order request.",
+      ok: false,
+      status: null,
+    };
+  }
+
+  const url = new URL(`/${config.version}/orders/`, config.baseUrl);
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        Authorization: basicAuth(config.accountNumber, config.apiKey),
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+      cache: "no-store",
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
+
+    if (
+      !response.ok ||
+      !Array.isArray(data) ||
+      !data.every(isSsPlacedOrder)
+    ) {
+      return {
+        data,
+        endpoint: `${url.origin}${url.pathname}`,
+        error: response.ok
+          ? "S&S returned an unexpected order confirmation."
+          : `S&S returned ${response.status} ${response.statusText}.`,
+        ok: false,
+        status: response.status,
+      };
+    }
+
+    return {
+      endpoint: `${url.origin}${url.pathname}`,
+      ok: true,
+      orders: data,
+      remainingRequests: response.headers.get("x-rate-limit-remaining"),
+      status: response.status,
+    };
+  } catch (error) {
+    return {
+      endpoint: `${url.origin}${url.pathname}`,
+      error:
+        error instanceof Error ? error.message : "Unknown S&S order error.",
+      ok: false,
+      status: null,
+    };
+  }
 }
 
 export async function searchSsStyles(

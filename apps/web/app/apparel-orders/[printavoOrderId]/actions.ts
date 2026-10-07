@@ -72,7 +72,7 @@ export async function confirmSsLineMapping(
     {
       confirmed_at: confirmedAt,
       confirmed_by: user.id,
-      match_source: suggestion.matchSource,
+      match_source: "historical_confirmation",
       printavo_line_item_id: lineItemId,
       printavo_order_id: orderId,
       source_color: lineItem.color,
@@ -90,6 +90,49 @@ export async function confirmSsLineMapping(
   );
 
   if (error) {
+    redirect(matchingUrl(orderId, "error"));
+  }
+
+  const { error: catalogError } = await supabase
+    .from("apparel_vendor_catalog_mappings")
+    .upsert(
+      {
+        confidence_score: 1,
+        evidence: {
+          printavo_line_item_id: lineItemId,
+          printavo_order_id: orderId,
+          source: "apparel_order_confirmation",
+          variants: suggestion.variants,
+        },
+        evidence_count: 1,
+        mapping_source: "human_confirmation",
+        review_status: "active",
+        reviewed_at: confirmedAt,
+        reviewed_by: user.id,
+        source_color: lineItem.color,
+        source_style_number: lineItem.styleNumber,
+        source_system: "printavo",
+        vendor_brand_name: suggestion.supplierBrandName,
+        vendor_color: suggestion.supplierColor,
+        vendor_key: "ss",
+        vendor_part_number: suggestion.supplierPartNumber,
+        vendor_style_id: suggestion.supplierStyleId,
+        vendor_style_name: suggestion.supplierStyleName,
+      },
+      {
+        onConflict:
+          "source_system,vendor_key,source_style_key,source_color_key",
+      },
+    );
+
+  if (catalogError) {
+    await supabase.from("audit_logs").insert({
+      action: "apparel.catalog_mapping.failed",
+      actor_user_id: user.id,
+      entity_id: `${orderId}:${lineItemId}:ss`,
+      entity_type: "apparel_vendor_catalog_mapping",
+      metadata: { error: catalogError.message },
+    });
     redirect(matchingUrl(orderId, "error"));
   }
 

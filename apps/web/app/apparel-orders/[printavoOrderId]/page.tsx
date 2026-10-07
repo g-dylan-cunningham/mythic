@@ -20,6 +20,7 @@ import {
   isSourceableApparelLine,
 } from "@/lib/printavo/order-summary";
 import { refreshPrintavoOrder } from "@/lib/printavo/recent-orders";
+import { ssPrintavoPoNumber } from "@/lib/ss/order-request";
 import { createClient } from "@/utils/supabase/server";
 
 type SearchParams = {
@@ -139,6 +140,7 @@ export default async function ApparelOrderSessionPage({
     eligible && getParam(resolvedSearchParams, "supplier") === "ss";
   const result = getParam(resolvedSearchParams, "result");
   const sourceableLines = order.lineItems.filter(isSourceableApparelLine);
+  const ssPoNumber = ssPrintavoPoNumber(order.orderNumber);
   const excludedLineCount = order.lineItems.length - sourceableLines.length;
   const mappingState: ApparelVendorMappingState = matchingRequested
     ? await getApparelVendorMappingState(supabase, orderId, sourceableLines)
@@ -525,6 +527,9 @@ export default async function ApparelOrderSessionPage({
                                   "historical_confirmation"
                                     ? "Prior human mapping"
                                     : suggestion.matchSource ===
+                                        "historical_reconciliation"
+                                      ? "September/October history"
+                                    : suggestion.matchSource ===
                                         "vendor_crossref"
                                       ? "S&S CrossRef mapping"
                                     : "Exact catalog match"}
@@ -627,6 +632,9 @@ export default async function ApparelOrderSessionPage({
               styles, colors, and sizes. Build a read-only S&amp;S suggestion for
               each line, then confirm the mappings individually. No supplier
               order will be created.
+            </p>
+            <p className="mt-2 text-sm text-emerald-100/80">
+              S&amp;S purchase order reference: {ssPoNumber}
             </p>
             <Link
               className="mt-5 inline-flex h-10 items-center rounded-md border border-emerald-400/50 px-4 text-sm font-medium text-emerald-100 transition hover:bg-emerald-400/10"

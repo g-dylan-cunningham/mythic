@@ -8,7 +8,10 @@ import {
   type SupplierCrossReference,
   type SupplierStyleCandidate,
 } from "@/lib/apparel-ordering/matching-logic";
-import type { ApparelVendorLineMapping } from "@/lib/apparel-ordering/vendor-mappings";
+import type {
+  ApparelVendorMappingSource,
+  ApparelVendorReusableMapping,
+} from "@/lib/apparel-ordering/vendor-mappings";
 import type { PrintavoOrderLineSummary } from "@/lib/printavo/order-summary";
 import {
   getSsCrossReferences,
@@ -28,10 +31,7 @@ export type SsVariantSelection = {
 
 export type SsLineSuggestion = {
   hasSufficientInventory: boolean;
-  matchSource:
-    | "historical_confirmation"
-    | "vendor_catalog"
-    | "vendor_crossref";
+  matchSource: ApparelVendorMappingSource;
   supplierBrandName: string;
   supplierColor: string;
   supplierPartNumber: string;
@@ -46,20 +46,20 @@ export type SsLineMatchResult =
   | { suggestion: null; unresolvedReason: string };
 
 function candidateFromMapping(
-  mapping: ApparelVendorLineMapping,
+  mapping: ApparelVendorReusableMapping,
 ): SupplierStyleCandidate {
   return {
-    brandName: mapping.vendor_brand_name,
-    partNumber: mapping.vendor_part_number,
-    styleID: mapping.vendor_style_id,
-    styleName: mapping.vendor_style_name,
-    title: mapping.vendor_style_name,
+    brandName: mapping.vendorBrandName,
+    partNumber: mapping.vendorPartNumber,
+    styleID: mapping.vendorStyleId,
+    styleName: mapping.vendorStyleName,
+    title: mapping.vendorStyleName,
   };
 }
 
 export async function getSsLineSuggestions(
   lineItems: PrintavoOrderLineSummary[],
-  historicalBySource: Map<string, ApparelVendorLineMapping>,
+  historicalBySource: Map<string, ApparelVendorReusableMapping>,
 ) {
   const crossReferencesRequest = getSsCrossReferences();
   const styleSearches = new Map<
@@ -89,7 +89,7 @@ export async function getSsLineSuggestions(
     {
       candidate: SupplierStyleCandidate;
       crossReferences: SupplierCrossReference[] | null;
-      historical: ApparelVendorLineMapping | null;
+      historical: ApparelVendorReusableMapping | null;
     }
   >();
   const unresolved = new Map<number, string>();
@@ -212,7 +212,7 @@ export async function getSsLineSuggestions(
       }
 
       const requestedColor =
-        resolved.historical?.vendor_color ??
+        resolved.historical?.vendorColor ??
         resolved.crossReferences?.[0]?.colorName ??
         lineItem.color ??
         "";
@@ -276,7 +276,7 @@ export async function getSsLineSuggestions(
             (variant) => variant.availableQty >= variant.requestedQty,
           ),
           matchSource: resolved.historical
-            ? "historical_confirmation"
+            ? resolved.historical.matchSource
             : resolved.crossReferences
               ? "vendor_crossref"
             : "vendor_catalog",
