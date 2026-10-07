@@ -1,4 +1,5 @@
 import type { Profile } from "@/lib/auth/roles";
+import { apparelOrderingRollout } from "../apparel-ordering/rollout.ts";
 
 export const FEATURE_KEYS = [
   "apparelOrdering",
@@ -15,7 +16,7 @@ const retainedFeaturesEnabled =
   process.env.MYTHIC_ENABLE_RETAINED_FEATURES === "true";
 
 export const featureFlags: FeatureFlags = Object.freeze({
-  apparelOrdering: true,
+  apparelOrdering: apparelOrderingRollout.featureEnabled,
   ssInventory: true,
   printavoFetching: true,
   productionSuite: retainedFeaturesEnabled,

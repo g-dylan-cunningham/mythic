@@ -330,6 +330,12 @@ export async function updatePrintavoOrderStatus({
   orderstatusId: number;
   retryBaseDelayMs?: number;
 }) {
+  if (!apparelOrderingRollout.printavoStatusUpdatesEnabled) {
+    throw new Error(
+      "Printavo status updates are disabled by the apparel-ordering rollout guard.",
+    );
+  }
+
   const config = getPrintavoConfig();
 
   if (!config.ok) {
@@ -624,3 +630,4 @@ export async function getPrintavoSalesReport({
     };
   }
 }
+import { apparelOrderingRollout } from "@/lib/apparel-ordering/rollout";

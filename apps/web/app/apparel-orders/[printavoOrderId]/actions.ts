@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
+import { apparelOrderingRollout } from "@/lib/apparel-ordering/rollout";
 import { getApparelVendorMappingState } from "@/lib/apparel-ordering/vendor-mappings";
 import { getSsLineSuggestions } from "@/lib/apparel-ordering/ss-matching";
 import { canAccessFeature } from "@/lib/features/feature-flags";
@@ -13,7 +14,10 @@ import {
 import { refreshPrintavoOrder } from "@/lib/printavo/recent-orders";
 import { createClient } from "@/utils/supabase/server";
 
-function matchingUrl(orderId: number, result: "confirmed" | "error") {
+function matchingUrl(
+  orderId: number,
+  result: "confirmed" | "error" | "protected",
+) {
   return `/apparel-orders/${orderId}?supplier=ss&result=${result}`;
 }
 
@@ -34,6 +38,10 @@ export async function confirmSsLineMapping(
 
   if (!canAccessFeature(profile, "apparelOrdering")) {
     redirect("/dashboard");
+  }
+
+  if (!apparelOrderingRollout.mappingConfirmationsEnabled) {
+    redirect(matchingUrl(orderId, "protected"));
   }
 
   const supabase = await createClient();

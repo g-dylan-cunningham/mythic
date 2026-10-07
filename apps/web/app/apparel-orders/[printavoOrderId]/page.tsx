@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { PendingSubmitButton } from "@/app/components/pending-submit-button";
 import { confirmSsLineMapping } from "@/app/apparel-orders/[printavoOrderId]/actions";
 import { getCurrentProfile } from "@/lib/auth/current-profile";
+import { apparelOrderingRollout } from "@/lib/apparel-ordering/rollout";
 import {
   getApparelVendorMappingState,
   type ApparelVendorMappingState,
@@ -208,6 +209,17 @@ export default async function ApparelOrderSessionPage({
           </div>
         ) : null}
 
+        {apparelOrderingRollout.mode === "review" ? (
+          <div
+            className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-5 py-4 text-sm leading-6 text-cyan-100"
+            role="status"
+          >
+            Protected review mode is active. You can inspect Printavo data and
+            generate S&amp;S suggestions, but you cannot confirm mappings,
+            submit an S&amp;S order, or change a Printavo status.
+          </div>
+        ) : null}
+
         {matchingRequested && result === "confirmed" ? (
           <div
             className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 px-5 py-4 text-sm text-emerald-100"
@@ -224,6 +236,16 @@ export default async function ApparelOrderSessionPage({
           >
             That line could not be confirmed. Refresh the suggestions and verify
             that the Printavo and S&amp;S data are still complete.
+          </div>
+        ) : null}
+
+
+        {matchingRequested && result === "protected" ? (
+          <div
+            className="rounded-lg border border-cyan-400/30 bg-cyan-400/10 px-5 py-4 text-sm text-cyan-100"
+            role="status"
+          >
+            That action is disabled while protected review mode is active.
           </div>
         ) : null}
 
@@ -585,6 +607,10 @@ export default async function ApparelOrderSessionPage({
                                 <span className="text-xs text-neutral-500">
                                   No action needed
                                 </span>
+                              ) : !apparelOrderingRollout.mappingConfirmationsEnabled ? (
+                                <span className="text-xs text-cyan-200">
+                                  Review only
+                                </span>
                               ) : (
                                 <form
                                   action={confirmSsLineMapping.bind(
@@ -625,13 +651,14 @@ export default async function ApparelOrderSessionPage({
         {eligible ? (
           <section className="rounded-lg border border-emerald-400/30 bg-emerald-400/10 p-5">
             <h2 className="text-lg font-semibold text-emerald-100">
-              Ready for apparel ordering
+              {apparelOrderingRollout.mode === "review"
+                ? "Ready for protected review"
+                : "Ready for apparel ordering"}
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-emerald-100/80">
-              The latest Printavo order has sourceable apparel quantities,
-              styles, colors, and sizes. Build a read-only S&amp;S suggestion for
-              each line, then confirm the mappings individually. No supplier
-              order will be created.
+              {apparelOrderingRollout.mode === "review"
+                ? "The latest Printavo order has sourceable apparel quantities, styles, colors, and sizes. Generate read-only S&S suggestions without saving confirmations, creating a supplier order, or changing Printavo."
+                : "The latest Printavo order has sourceable apparel quantities, styles, colors, and sizes. Build an S&S suggestion for each line, then confirm the mappings individually. No supplier order will be created unless its separate submission switch is explicitly enabled."}
             </p>
             <p className="mt-2 text-sm text-emerald-100/80">
               S&amp;S purchase order reference: {ssPoNumber}
@@ -642,7 +669,9 @@ export default async function ApparelOrderSessionPage({
             >
               {matchingRequested
                 ? "Refresh S&S suggestions"
-                : "Populate S&S cart suggestions"}
+                : apparelOrderingRollout.mode === "review"
+                  ? "Generate read-only S&S suggestions"
+                  : "Populate S&S cart suggestions"}
             </Link>
           </section>
         ) : null}

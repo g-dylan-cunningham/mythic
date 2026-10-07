@@ -2,6 +2,7 @@ import {
   buildSsPrintavoOrderRequest,
   type SsPrintavoOrderInput,
 } from "@/lib/ss/order-request";
+import { apparelOrderingRollout } from "@/lib/apparel-ordering/rollout";
 
 type SsConnectionResult =
   | {
@@ -296,6 +297,16 @@ function isSsPlacedOrder(value: unknown): value is SsPlacedOrder {
 export async function placeSsPrintavoOrder(
   input: SsPrintavoOrderInput,
 ): Promise<SsPlaceOrderResult> {
+  if (!apparelOrderingRollout.ssOrderSubmissionEnabled) {
+    return {
+      endpoint: null,
+      error:
+        "S&S order submission is disabled by the apparel-ordering rollout guard.",
+      ok: false,
+      status: null,
+    };
+  }
+
   const config = getSsConfig();
 
   if (!config.ok) {

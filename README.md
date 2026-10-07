@@ -45,6 +45,18 @@ for role and department authorization.
 Use `npm --prefix apps/web run build:retained` to compile the application with
 the retained feature set explicitly enabled.
 
+The apparel-ordering rollout is fail closed. Set
+`MYTHIC_APPAREL_ORDERING_MODE=review` to expose read-only Printavo and S&amp;S
+matching to active owners and admins. Missing or invalid values hide the tool.
+`live` mode permits internal mapping confirmations, but external S&amp;S order
+submission and Printavo status changes still require their own explicit
+server-only switches. Keep both of these `false` during the protected pilot:
+
+```bash
+MYTHIC_ENABLE_SS_ORDER_SUBMISSION=false
+MYTHIC_ENABLE_PRINTAVO_STATUS_UPDATES=false
+```
+
 Start the local Supabase stack:
 
 ```bash
