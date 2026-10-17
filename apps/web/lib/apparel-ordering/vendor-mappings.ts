@@ -60,6 +60,13 @@ type ApparelVendorCatalogMapping = {
   vendor_style_name: string;
 };
 
+function isMissingRelationError(error: { code?: string; message: string }) {
+  return (
+    error.code === "PGRST205" ||
+    /could not find the table .* in the schema cache/i.test(error.message)
+  );
+}
+
 export type ApparelVendorMappingState = {
   currentByLineItemId: Map<number, ApparelVendorLineMapping>;
   historicalBySource: Map<string, ApparelVendorReusableMapping>;
@@ -154,10 +161,6 @@ export async function getApparelVendorMappingState(
       ),
     ),
   );
-  const styleKeys = styleNumbers.map((styleNumber) =>
-    mappingKey(styleNumber, "").split("::", 1)[0] as string,
-  );
-
   if (styleNumbers.length === 0) {
     return {
       currentByLineItemId: new Map(),
@@ -173,7 +176,7 @@ export async function getApparelVendorMappingState(
       )
       .eq("source_system", "printavo")
       .eq("vendor_key", vendorKey)
-      .in("source_style_key", styleKeys)
+      .in("source_style_number", styleNumbers)
       .order("confirmed_at", { ascending: false })
       .returns<ApparelVendorLineMapping[]>(),
     supabase
@@ -184,7 +187,7 @@ export async function getApparelVendorMappingState(
       .eq("source_system", "printavo")
       .eq("vendor_key", vendorKey)
       .eq("review_status", "active")
-      .in("source_style_key", styleKeys)
+      .in("source_style_number", styleNumbers)
       .returns<ApparelVendorCatalogMapping[]>(),
   ]);
 
@@ -194,7 +197,7 @@ export async function getApparelVendorMappingState(
     );
   }
 
-  if (catalogResult.error) {
+  if (catalogResult.error && !isMissingRelationError(catalogResult.error)) {
     throw new Error(
       `Could not load reusable apparel mappings: ${catalogResult.error.message}`,
     );

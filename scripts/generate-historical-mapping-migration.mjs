@@ -2,6 +2,8 @@
 
 import { readFile, writeFile } from "node:fs/promises";
 
+const MIN_ACTIVE_CONFIDENCE = 0.97;
+
 function sqlString(value) {
   return `'${String(value).replaceAll("'", "''")}'`;
 }
@@ -59,10 +61,66 @@ function valuesFor(relationship, scope) {
   )`;
 }
 
-function migrationSql(data) {
-  const rows = data.relationships.map((relationship) =>
+function insertSql(data, { protectExisting }) {
+  const eligibleRelationships = data.relationships.filter(
+    (relationship) =>
+      Number(confidenceFor(relationship.observations)) >=
+      MIN_ACTIVE_CONFIDENCE,
+  );
+  const rows = eligibleRelationships.map((relationship) =>
     valuesFor(relationship, data.scope),
   );
+
+  if (rows.length === 0) {
+    throw new Error(
+      `The evidence file has no relationships at or above ${MIN_ACTIVE_CONFIDENCE}.`,
+    );
+  }
+
+  const conflictGuard = protectExisting
+    ? `
+where apparel_vendor_catalog_mappings.mapping_source = 'historical_reconciliation'
+  and apparel_vendor_catalog_mappings.vendor_style_id = excluded.vendor_style_id
+  and apparel_vendor_catalog_mappings.vendor_part_number = excluded.vendor_part_number
+  and lower(regexp_replace(apparel_vendor_catalog_mappings.vendor_color, '[^[:alnum:]]', '', 'g')) =
+      lower(regexp_replace(excluded.vendor_color, '[^[:alnum:]]', '', 'g'))`
+    : "";
+
+  return `insert into public.apparel_vendor_catalog_mappings (
+  source_system,
+  source_style_number,
+  source_color,
+  vendor_key,
+  vendor_style_id,
+  vendor_part_number,
+  vendor_brand_name,
+  vendor_style_name,
+  vendor_color,
+  mapping_source,
+  confidence_score,
+  evidence_count,
+  evidence,
+  review_status
+)
+values
+${rows.join(",\n")}
+on conflict on constraint apparel_vendor_catalog_mappings_source_unique
+do update set
+  vendor_style_id = excluded.vendor_style_id,
+  vendor_part_number = excluded.vendor_part_number,
+  vendor_brand_name = excluded.vendor_brand_name,
+  vendor_style_name = excluded.vendor_style_name,
+  vendor_color = excluded.vendor_color,
+  mapping_source = excluded.mapping_source,
+  confidence_score = excluded.confidence_score,
+  evidence_count = excluded.evidence_count,
+  evidence = excluded.evidence,
+  review_status = excluded.review_status,
+  updated_at = now()${conflictGuard};
+`;
+}
+
+function migrationSql(data) {
 
   return `alter table public.apparel_vendor_line_mappings
   add column if not exists source_style_key text
@@ -184,45 +242,25 @@ comment on table public.apparel_vendor_catalog_mappings is
 comment on column public.apparel_vendor_catalog_mappings.evidence is
   'Historical evidence supporting the mapping, including source order IDs, supplier order IDs, comparison scores, and observed size SKUs. Legacy free-form PO values are intentionally excluded.';
 
-insert into public.apparel_vendor_catalog_mappings (
-  source_system,
-  source_style_number,
-  source_color,
-  vendor_key,
-  vendor_style_id,
-  vendor_part_number,
-  vendor_brand_name,
-  vendor_style_name,
-  vendor_color,
-  mapping_source,
-  confidence_score,
-  evidence_count,
-  evidence,
-  review_status
-)
-values
-${rows.join(",\n")}
-on conflict on constraint apparel_vendor_catalog_mappings_source_unique
-do update set
-  vendor_style_id = excluded.vendor_style_id,
-  vendor_part_number = excluded.vendor_part_number,
-  vendor_brand_name = excluded.vendor_brand_name,
-  vendor_style_name = excluded.vendor_style_name,
-  vendor_color = excluded.vendor_color,
-  mapping_source = excluded.mapping_source,
-  confidence_score = excluded.confidence_score,
-  evidence_count = excluded.evidence_count,
-  evidence = excluded.evidence,
-  review_status = excluded.review_status,
-  updated_at = now();
-`;
+${insertSql(data, { protectExisting: false })}`;
 }
 
-const [inputPath, outputPath] = process.argv.slice(2);
+function dataOnlyMigrationSql(data) {
+  return `-- Refresh historical mapping evidence without replacing a human-confirmed
+-- relationship or changing an existing historical relationship to a conflicting
+-- S&S catalog identity.
+${insertSql(data, { protectExisting: true })}`;
+}
+
+const dataOnly = process.argv.includes("--data-only");
+const positional = process.argv
+  .slice(2)
+  .filter((argument) => argument !== "--data-only");
+const [inputPath, outputPath] = positional;
 
 if (!inputPath || !outputPath) {
   throw new Error(
-    "Usage: generate-historical-mapping-migration.mjs <evidence.json> <migration.sql>",
+    "Usage: generate-historical-mapping-migration.mjs [--data-only] <evidence.json> <migration.sql>",
   );
 }
 
@@ -232,7 +270,11 @@ if (!Array.isArray(data.relationships) || data.relationships.length === 0) {
   throw new Error("The evidence file does not contain reusable relationships.");
 }
 
-await writeFile(outputPath, migrationSql(data), "utf8");
+await writeFile(
+  outputPath,
+  dataOnly ? dataOnlyMigrationSql(data) : migrationSql(data),
+  "utf8",
+);
 console.log(
-  `Wrote ${data.relationships.length} catalog mappings to ${outputPath}.`,
+  `Wrote ${data.relationships.filter((relationship) => Number(confidenceFor(relationship.observations)) >= MIN_ACTIVE_CONFIDENCE).length} catalog mappings at or above ${MIN_ACTIVE_CONFIDENCE} to ${outputPath}.`,
 );

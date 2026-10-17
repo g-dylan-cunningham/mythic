@@ -143,6 +143,18 @@ test("blocks an order whose apparel lines are already ordered", () => {
   assert.equal(result.sourceableLineCount, 0);
 });
 
+test("replays an already ordered line as sourceable for historical reporting", () => {
+  const [lineItem] = apparelOrder().lineItems;
+  const result = getApparelOrderReadiness(
+    apparelOrder({ lineItems: [{ ...lineItem, goodsStatus: "ordered" }] }),
+    { replayOrderedLines: true },
+  );
+
+  assert.equal(result.eligible, true);
+  assert.deepEqual(result.reasons, []);
+  assert.equal(result.sourceableLineCount, 1);
+});
+
 test("ignores an explicit do-not-order DTF add-on", () => {
   const [garment] = apparelOrder().lineItems;
   const addOn = {

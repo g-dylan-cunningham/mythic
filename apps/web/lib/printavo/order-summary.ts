@@ -282,6 +282,7 @@ export function isSourceableApparelLine(
 
 export function getApparelOrderReadiness(
   order: PrintavoOrderDetails,
+  options: { replayOrderedLines?: boolean } = {},
 ): ApparelOrderReadiness {
   const reasons: string[] = [];
   const status = order.statusName?.toLowerCase() ?? "";
@@ -292,7 +293,11 @@ export function getApparelOrderReadiness(
   }));
   const sourceableLines = classifiedLines.flatMap(
     ({ classification, lineItem }) =>
-      classification.disposition === "sourceable" ? [lineItem] : [],
+      classification.disposition === "sourceable" ||
+      (options.replayOrderedLines &&
+        classification.disposition === "already_ordered")
+        ? [lineItem]
+        : [],
   );
   const orderedLineCount = classifiedLines.filter(
     ({ classification }) =>

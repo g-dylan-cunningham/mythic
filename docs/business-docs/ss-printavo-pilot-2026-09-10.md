@@ -155,3 +155,33 @@ The reusable relationships are seeded as active historical evidence in
 `apparel_vendor_catalog_mappings`. Human-confirmed mappings remain higher
 priority and replace the reusable catalog relationship when staff confirms a
 different supplier identity.
+
+## Six-month high-confidence expansion
+
+On October 15, 2026, the reconciliation was expanded to cover April 15 through
+October 15. The comparison loaded all 19,116 available Printavo orders, so it
+did not stop at a pagination cap, and compared them with 477 S&S orders.
+Legacy PO values were grouped within their order month to avoid combining a
+reused customer or PO label across unrelated purchases.
+
+The expanded pass produced 138 consistent candidate relationships from 164
+exact line observations. Two candidates scored 0.9666 and were retained as
+`proposed` evidence instead of being available to automatic matching. The
+active threshold remains 0.9700.
+
+After the protected import, the live mapping set contains:
+
+| Mapping measure | Result |
+| --- | ---: |
+| Active high-confidence mappings | 218 |
+| Proposed sub-threshold candidates | 2 |
+| Distinct active Printavo/S&S style families | 48 |
+| Active historical line observations | 244 |
+| Distinct observed S&S SKUs in active evidence | 581 |
+| Active confidence range | 0.9700–0.9900 |
+| Conflicting imported targets | 0 |
+
+The six-month import added 122 relationships and refreshed the evidence for 16
+existing relationships. Its conflict guard does not overwrite a
+human-confirmed relationship or an existing historical relationship pointing
+to a different S&S style, part number, or normalized color.

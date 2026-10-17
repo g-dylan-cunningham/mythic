@@ -5,6 +5,7 @@ import {
   selectSupplierCrossReferences,
   selectSupplierStyleCandidate,
   selectSupplierVariant,
+  supplierStyleSearchTerms,
   type SupplierCrossReference,
   type SupplierStyleCandidate,
 } from "@/lib/apparel-ordering/matching-logic";
@@ -31,6 +32,8 @@ export type SsVariantSelection = {
 
 export type SsLineSuggestion = {
   hasSufficientInventory: boolean;
+  mappingConfidenceScore: number | null;
+  mappingEvidenceCount: number;
   matchSource: ApparelVendorMappingSource;
   supplierBrandName: string;
   supplierColor: string;
@@ -76,11 +79,15 @@ export async function getSsLineSuggestions(
       mappingKey(lineItem.styleNumber, lineItem.color),
     );
 
-    if (!historical && !styleSearches.has(lineItem.styleNumber)) {
-      styleSearches.set(
+    if (!historical) {
+      for (const searchTerm of supplierStyleSearchTerms(
         lineItem.styleNumber,
-        searchSsStyles(lineItem.styleNumber),
-      );
+        lineItem.description,
+      )) {
+        if (!styleSearches.has(searchTerm)) {
+          styleSearches.set(searchTerm, searchSsStyles(searchTerm));
+        }
+      }
     }
   }
 
@@ -121,43 +128,55 @@ export async function getSsLineSuggestions(
         return;
       }
 
-      const search = await styleSearches.get(lineItem.styleNumber);
+      const crossReferenceResult = await crossReferencesRequest;
+      let resolvedCandidate: {
+        candidate: SupplierStyleCandidate;
+        crossReferences: SupplierCrossReference[] | null;
+      } | null = null;
+      let lastSearchError: string | null = null;
 
-      if (!search?.ok) {
-        unresolved.set(
-          lineItem.lineItemId,
-          search?.error ?? "The S&S style search failed.",
-        );
-        return;
+      for (const searchTerm of supplierStyleSearchTerms(
+        lineItem.styleNumber,
+        lineItem.description,
+      )) {
+        const search = await styleSearches.get(searchTerm);
+
+        if (!search?.ok) {
+          lastSearchError = search?.error ?? "The S&S style search failed.";
+          continue;
+        }
+
+        const crossReferences = crossReferenceResult.ok
+          ? selectSupplierCrossReferences({
+              color: lineItem.color,
+              crossReferences: crossReferenceResult.crossReferences,
+              sizes: lineItem.sizes.map((size) => size.label),
+              styleNumber: searchTerm,
+            })
+          : null;
+        const candidate = selectSupplierStyleCandidate({
+          candidates: search.candidates,
+          description:
+            crossReferences?.[0]?.brandName ?? lineItem.description,
+          styleNumber: searchTerm,
+        });
+
+        if (candidate) {
+          resolvedCandidate = { candidate, crossReferences };
+          break;
+        }
       }
 
-      const crossReferenceResult = await crossReferencesRequest;
-      const crossReferences = crossReferenceResult.ok
-        ? selectSupplierCrossReferences({
-            color: lineItem.color,
-            crossReferences: crossReferenceResult.crossReferences,
-            sizes: lineItem.sizes.map((size) => size.label),
-            styleNumber: lineItem.styleNumber,
-          })
-        : null;
-      const candidate = selectSupplierStyleCandidate({
-        candidates: search.candidates,
-        description:
-          crossReferences?.[0]?.brandName ?? lineItem.description,
-        styleNumber: lineItem.styleNumber,
-      });
-
-      if (!candidate) {
+      if (!resolvedCandidate) {
         unresolved.set(
           lineItem.lineItemId,
-          "No unambiguous S&S style match was found.",
+          lastSearchError ?? "No unambiguous S&S style match was found.",
         );
         return;
       }
 
       resolvedStyles.set(lineItem.lineItemId, {
-        candidate,
-        crossReferences,
+        ...resolvedCandidate,
         historical: null,
       });
     }),
@@ -275,6 +294,9 @@ export async function getSsLineSuggestions(
           hasSufficientInventory: variants.every(
             (variant) => variant.availableQty >= variant.requestedQty,
           ),
+          mappingConfidenceScore:
+            resolved.historical?.confidenceScore ?? null,
+          mappingEvidenceCount: resolved.historical?.evidenceCount ?? 0,
           matchSource: resolved.historical
             ? resolved.historical.matchSource
             : resolved.crossReferences

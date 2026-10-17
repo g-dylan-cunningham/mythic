@@ -31,6 +31,23 @@ export function mappingKey(styleNumber: string, color: string) {
   return `${compact(styleNumber)}::${compact(color)}`;
 }
 
+export function supplierStyleSearchTerms(
+  styleNumber: string,
+  description: string | null,
+) {
+  const sourceStyle = styleNumber.trim();
+  const descriptionTerms =
+    description?.match(/\b[a-z0-9][a-z0-9-]{2,}\b/gi) ?? [];
+  const styleHints = descriptionTerms.filter(
+    (term) =>
+      /\d/.test(term) &&
+      compact(term) !== compact(sourceStyle) &&
+      !/^\d?x{0,2}l$/i.test(term),
+  );
+
+  return Array.from(new Set([...styleHints, sourceStyle])).filter(Boolean);
+}
+
 export function selectSupplierStyleCandidate({
   candidates,
   description,

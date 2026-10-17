@@ -2,11 +2,52 @@
 
 import { writeFile } from "node:fs/promises";
 
-const START_DATE = "2026-09-01";
-const END_DATE = "2026-10-04";
 const PRINTAVO_PAGE_SIZE = 100;
-const PRINTAVO_MAX_PAGES = 25;
 const PRINTAVO_PAGE_DELAY_MS = 250;
+const MIN_ACTIVE_CONFIDENCE = 0.97;
+
+function optionValue(name, fallback) {
+  const index = process.argv.indexOf(name);
+
+  return index >= 0 ? process.argv[index + 1] : fallback;
+}
+
+function isoDateOption(name, fallback) {
+  const value = optionValue(name, fallback);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? "")) {
+    throw new Error(`${name} must use YYYY-MM-DD format.`);
+  }
+
+  const parsed = Date.parse(`${value}T00:00:00Z`);
+
+  if (!Number.isFinite(parsed)) {
+    throw new Error(`${name} is not a valid date.`);
+  }
+
+  return value;
+}
+
+function positiveIntegerOption(name, fallback) {
+  const value = Number(optionValue(name, String(fallback)));
+
+  if (!Number.isSafeInteger(value) || value <= 0) {
+    throw new Error(`${name} must be a positive integer.`);
+  }
+
+  return value;
+}
+
+const START_DATE = isoDateOption("--start-date", "2026-09-01");
+const END_DATE = isoDateOption("--end-date", "2026-10-04");
+const PRINTAVO_MAX_PAGES = positiveIntegerOption(
+  "--printavo-max-pages",
+  25,
+);
+
+if (START_DATE > END_DATE) {
+  throw new Error("--start-date must be on or before --end-date.");
+}
 
 const APPAREL_CATEGORIES = new Set([
   "dtf",
@@ -458,6 +499,8 @@ async function fetchPrintavoOrders() {
   const email = requiredEnvironment("PRINTAVO_API_EMAIL");
   const token = requiredEnvironment("PRINTAVO_API_TOKEN");
   const orders = [];
+  let exhausted = false;
+  let pagesFetched = 0;
 
   for (let page = 1; page <= PRINTAVO_MAX_PAGES; page += 1) {
     const url = new URL(`/api/${version}/orders`, baseUrl);
@@ -470,8 +513,10 @@ async function fetchPrintavoOrders() {
     const data = await fetchJson(url);
     const pageOrders = Array.isArray(data?.data) ? data.data : [];
     orders.push(...pageOrders);
+    pagesFetched = page;
 
     if (pageOrders.length < PRINTAVO_PAGE_SIZE) {
+      exhausted = true;
       break;
     }
 
@@ -480,7 +525,7 @@ async function fetchPrintavoOrders() {
     );
   }
 
-  return orders;
+  return { exhausted, orders, pagesFetched };
 }
 
 async function resolveSsStyles(mappings) {
@@ -541,14 +586,19 @@ function groupSsOrders(orders) {
 
   for (const order of orders) {
     const poNumber = String(order.poNumber ?? "").trim();
-    const key = poNumber || `GUID:${order.guid}`;
+    const orderAt = dateValue(order.orderDate) ?? dateValue(order.invoiceDate);
+    const orderMonth = orderAt
+      ? new Date(orderAt).toISOString().slice(0, 7)
+      : "unknown-month";
+    const orderReference = poNumber || `GUID:${order.guid}`;
+    const key = `${orderMonth}::${orderReference}`;
     const current = grouped.get(key) ?? [];
     current.push(order);
     grouped.set(key, current);
   }
 
-  return [...grouped].map(([poNumber, group]) =>
-    normalizeSsGroup(poNumber, group),
+  return [...grouped].map(([, group]) =>
+    normalizeSsGroup(String(group[0]?.poNumber ?? "").trim(), group),
   );
 }
 
@@ -579,19 +629,36 @@ function aggregateMappings(mappings) {
   });
 }
 
-function outputPath() {
-  const index = process.argv.indexOf("--output");
+function confidenceForMappingGroup(group) {
+  const scores = group.observations.map((observation) => {
+    const comparison = observation.evidence.comparison;
+    const printavoCoverage = Number(comparison?.printavoCoverage ?? 0.8);
+    const supplierCoverage = Number(comparison?.supplierCoverage ?? 0);
 
-  return index >= 0 ? process.argv[index + 1] : null;
+    return Math.min(
+      0.99,
+      0.95 + 0.02 * printavoCoverage + 0.02 * supplierCoverage,
+    );
+  });
+
+  return Math.min(...scores);
+}
+
+function outputPath() {
+  return optionValue("--output", null);
 }
 
 async function main() {
-  const [rawSsOrders, rawPrintavoOrders] = await Promise.all([
+  const [rawSsOrders, printavoFetch] = await Promise.all([
     fetchSsOrders(),
     fetchPrintavoOrders(),
   ]);
+  const rawPrintavoOrders = printavoFetch.orders;
   const ssGroups = groupSsOrders(rawSsOrders);
   const printavoOrders = rawPrintavoOrders.map(normalizePrintavoOrder);
+  const printavoCreatedDates = printavoOrders
+    .map((order) => order.createdAt)
+    .filter((value) => value !== null);
   const comparisons = findStrongCandidates(ssGroups, printavoOrders);
   const uniqueStrong = comparisons.filter(
     (comparison) => comparison.candidates.length === 1,
@@ -601,28 +668,50 @@ async function main() {
   );
   const resolvedMappings = await resolveSsStyles(inferredMappings);
   const mappingGroups = aggregateMappings(resolvedMappings);
-  const acceptedMappings = mappingGroups
-    .filter((group) => group.consistent)
-    .flatMap((group) => group.observations);
+  const consistentMappingGroups = mappingGroups.filter(
+    (group) => group.consistent,
+  );
+  const acceptedMappingGroups = consistentMappingGroups.filter(
+    (group) => confidenceForMappingGroup(group) >= MIN_ACTIVE_CONFIDENCE,
+  );
+  const lowConfidenceMappingGroups = consistentMappingGroups.filter(
+    (group) => confidenceForMappingGroup(group) < MIN_ACTIVE_CONFIDENCE,
+  );
+  const acceptedMappings = acceptedMappingGroups.flatMap(
+    (group) => group.observations,
+  );
   const result = {
     generatedAt: new Date().toISOString(),
     scope: {
       endDate: END_DATE,
+      minActiveConfidence: MIN_ACTIVE_CONFIDENCE,
       printavoMaxPages: PRINTAVO_MAX_PAGES,
+      ssGrouping: "po_number_within_order_month",
       startDate: START_DATE,
     },
     summary: {
       acceptedLineMappings: acceptedMappings.length,
-      acceptedReusableRelationships: mappingGroups.filter(
-        (group) => group.consistent,
-      ).length,
+      acceptedReusableRelationships: acceptedMappingGroups.length,
+      earliestPrintavoOrderDate:
+        printavoCreatedDates.length > 0
+          ? new Date(Math.min(...printavoCreatedDates)).toISOString()
+          : null,
+      latestPrintavoOrderDate:
+        printavoCreatedDates.length > 0
+          ? new Date(Math.max(...printavoCreatedDates)).toISOString()
+          : null,
       printavoOrders: rawPrintavoOrders.length,
+      printavoPageLimitReached: !printavoFetch.exhausted,
+      printavoPagesFetched: printavoFetch.pagesFetched,
+      rejectedLowConfidenceRelationships:
+        lowConfidenceMappingGroups.length,
       resolvedLineMappings: resolvedMappings.length,
       ssOrders: rawSsOrders.length,
       ssPoGroups: ssGroups.length,
       uniqueStrongGroups: uniqueStrong.length,
     },
-    relationships: mappingGroups.filter((group) => group.consistent),
+    lowConfidenceRelationships: lowConfidenceMappingGroups,
+    relationships: acceptedMappingGroups,
     rejectedConflicts: mappingGroups.filter((group) => !group.consistent),
   };
   const json = `${JSON.stringify(result, null, 2)}\n`;

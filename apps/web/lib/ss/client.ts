@@ -60,7 +60,7 @@ type SsCrossReference = {
   yourSku?: string | null;
 };
 
-type SsPlacedOrderLine = {
+export type SsPlacedOrderLine = {
   brandName?: string | null;
   colorName?: string | null;
   lineNumber?: number | null;
@@ -75,8 +75,10 @@ type SsPlacedOrderLine = {
 
 export type SsPlacedOrder = {
   guid: string;
+  invoiceDate?: string | null;
   invoiceNumber: string;
   lines: SsPlacedOrderLine[];
+  orderDate?: string | null;
   orderNumber: string;
   orderStatus: string;
   poNumber: string;
@@ -85,6 +87,22 @@ export type SsPlacedOrder = {
 };
 
 export type SsPlaceOrderResult =
+  | {
+      endpoint: string;
+      ok: true;
+      orders: SsPlacedOrder[];
+      remainingRequests: string | null;
+      status: number;
+    }
+  | {
+      data?: unknown;
+      endpoint: string | null;
+      error: string;
+      ok: false;
+      status: number | null;
+    };
+
+export type SsOrderHistoryResult =
   | {
       endpoint: string;
       ok: true;
@@ -292,6 +310,114 @@ function isSsPlacedOrder(value: unknown): value is SsPlacedOrder {
     typeof order.poNumber === "string" &&
     order.poNumber.length > 0
   );
+}
+
+function isSsHistoricalOrder(value: unknown): value is SsPlacedOrder {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const order = value as Record<string, unknown>;
+
+  return (
+    typeof order.guid === "string" &&
+    order.guid.length > 0 &&
+    typeof order.orderNumber === "string" &&
+    order.orderNumber.length > 0 &&
+    Array.isArray(order.lines)
+  );
+}
+
+function isIsoDate(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(`${value}T00:00:00Z`));
+}
+
+export async function getSsOrderHistory({
+  endDate,
+  startDate,
+}: {
+  endDate: string;
+  startDate: string;
+}): Promise<SsOrderHistoryResult> {
+  const config = getSsConfig();
+
+  if (!config.ok) {
+    return {
+      endpoint: null,
+      error: config.error,
+      ok: false,
+      status: null,
+    };
+  }
+
+  if (!isIsoDate(startDate) || !isIsoDate(endDate) || startDate > endDate) {
+    return {
+      endpoint: null,
+      error: "A valid S&S order-history date range is required.",
+      ok: false,
+      status: null,
+    };
+  }
+
+  const url = new URL(`/${config.version}/orders/`, config.baseUrl);
+  url.searchParams.set("invoicestartdate", startDate);
+  url.searchParams.set("invoiceenddate", endDate);
+  url.searchParams.set("lines", "true");
+  url.searchParams.set("mediatype", "json");
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json",
+        Authorization: basicAuth(config.accountNumber, config.apiKey),
+      },
+      cache: "no-store",
+    });
+    const contentType = response.headers.get("content-type") ?? "";
+    const data = contentType.includes("application/json")
+      ? await response.json()
+      : await response.text();
+
+    if (
+      !response.ok ||
+      !Array.isArray(data) ||
+      !data.every(isSsHistoricalOrder)
+    ) {
+      return {
+        data,
+        endpoint: `${url.origin}${url.pathname}`,
+        error: response.ok
+          ? "S&S returned an unexpected order-history response."
+          : `S&S returned ${response.status} ${response.statusText}.`,
+        ok: false,
+        status: response.status,
+      };
+    }
+
+    return {
+      endpoint: `${url.origin}${url.pathname}`,
+      ok: true,
+      orders: data.map((order) => ({
+        ...order,
+        poNumber:
+          typeof order.poNumber === "string" ? order.poNumber : "",
+      })),
+      remainingRequests: response.headers.get("x-rate-limit-remaining"),
+      status: response.status,
+    };
+  } catch (error) {
+    return {
+      endpoint: `${url.origin}${url.pathname}`,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Unknown S&S order-history error.",
+      ok: false,
+      status: null,
+    };
+  }
 }
 
 export async function placeSsPrintavoOrder(

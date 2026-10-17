@@ -7,6 +7,7 @@ import {
   selectSupplierCrossReferences,
   selectSupplierStyleCandidate,
   selectSupplierVariant,
+  supplierStyleSearchTerms,
 } from "./matching-logic.ts";
 
 const lat = {
@@ -44,6 +45,16 @@ test("uses the Printavo description to resolve duplicate style numbers", () => {
       styleNumber: "6901",
     }),
     lat,
+  );
+});
+
+test("uses an explicit vendor style in the product description before the Printavo style", () => {
+  assert.deepEqual(
+    supplierStyleSearchTerms(
+      "5051",
+      "Comfort Colors Unisex Garment-Dyed Heavyweight T-Shirt - 1717 Retail price $30",
+    ),
+    ["1717", "5051"],
   );
 });
 
