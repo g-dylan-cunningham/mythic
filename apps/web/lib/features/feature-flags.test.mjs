@@ -6,6 +6,7 @@ import {
 } from "./feature-flags.ts";
 
 const activeFlags = {
+  pricing: true,
   apparelOrdering: true,
   operationalReports: true,
   printavoFetching: true,
@@ -123,6 +124,20 @@ test("inactive accounts cannot access enabled tools", () => {
 test("dashboard catalog contains only the active rollout tools", () => {
   assert.deepEqual(
     dashboardTools.map((tool) => tool.feature),
-    ["ssInventory", "printavoFetching"],
+    ["pricing", "ssInventory", "printavoFetching"],
   );
+});
+
+test("pricing is available to every active role, department and authority", () => {
+  for (const role of ["owner", "admin", "staff", "customer"]) {
+    for (const department of [null, "sales", "design", "production", "logistics", "operations"]) {
+      for (const authority_level of ["junior_employee", "senior_employee", "junior_manager", "senior_manager", "director"]) {
+        const user = profile({ role, department, authority_level });
+        assert.equal(canAccessFeatureWithFlags(user, "pricing", activeFlags), true);
+        assert.equal(canAccessFeatureWithFlags(user, "pricing", { ...activeFlags, pricing: false }), false);
+        assert.equal(canAccessFeatureWithFlags({ ...user, is_active: false }, "pricing", activeFlags), false);
+      }
+    }
+  }
+  assert.equal(canAccessFeatureWithFlags(null, "pricing", activeFlags), false);
 });

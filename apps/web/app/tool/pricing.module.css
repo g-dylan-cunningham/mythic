@@ -1,0 +1,52 @@
+.tool { background: #0a0a0a; color: #f5f5f5; min-height: 100vh; padding: 32px 24px 64px; }
+.shell { max-width: 1200px; margin: auto; }
+.back { color: #a3a3a3; font-size: 14px; }
+.heading { margin: 36px 0 28px; }
+.heading > p, .eyebrow { color: #6ee7b7; font-size: 12px; font-weight: 700; letter-spacing: .15em; }
+.heading h1 { font-size: clamp(32px, 5vw, 54px); letter-spacing: -.04em; font-weight: 650; margin: 12px 0; }
+.heading > span { color: #a3a3a3; }
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+.tool button { border: 1px solid #404040; border-radius: 7px; padding: 9px 13px; cursor: pointer; font-size: 14px; font-weight: 500; background: #171717; color: #eee; }
+.tool button:hover { border-color: #6ee7b7; }
+.tool button:disabled { opacity: .4; cursor: not-allowed; }
+.tool button[aria-pressed="true"], .tool button.primary { background: #6ee7b7; color: #052e20; border-color: #6ee7b7; }
+.tool :is(button, input, select, summary, a):focus-visible { outline: 2px solid #6ee7b7; outline-offset: 3px; }
+.grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.card { border: 1px solid #303030; border-radius: 12px; padding: 26px; background: #171717; min-width: 0; }
+.cardTitle { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 24px; }
+.tool h2 { font-size: 22px; font-weight: 600; overflow-wrap: anywhere; }
+.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.tool label { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: #d4d4d4; margin-bottom: 18px; }
+.tool :is(input:not([type="checkbox"]), select) { min-width: 0; width: 100%; border: 1px solid #404040; border-radius: 6px; padding: 11px; color: #f5f5f5; background: #0a0a0a; font-size: 15px; }
+.tool select { text-overflow: ellipsis; }
+.tool .check { flex-direction: row; align-items: center; gap: 10px; }
+.check input { accent-color: #6ee7b7; width: 17px; height: 17px; }
+.tool fieldset { border: 0; margin: 4px 0 24px; padding: 0; }
+.tool legend { font-size: 13px; color: #d4d4d4; margin-bottom: 10px; font-weight: 600; }
+.colors > div { display: flex; gap: 5px; flex-wrap: wrap; }
+.tool fieldset:disabled { opacity: .45; }
+.tool p { line-height: 1.6; overflow-wrap: anywhere; }
+.colors p, .finishing p, .estimate > p:not(.price):not(.eyebrow), .saved > p { color: #a3a3a3; font-size: 13px; }
+.finishing { padding-top: 20px !important; border-top: 1px solid #303030 !important; }
+.estimate { position: sticky; top: 100px; }
+.estimate h2 { margin: 14px 0 6px; }
+.unitLabel { margin-top: 24px; letter-spacing: .1em; font-size: 11px !important; }
+.price { font-size: clamp(28px, 3vw, 40px); font-weight: 650; letter-spacing: -.04em; margin: 8px 0 20px; }
+.total { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-block: 1px solid #404040; padding: 18px 0; }
+.total strong { color: #6ee7b7; font-size: 22px; }
+.tool dl { font-size: 13px; margin: 20px 0; }
+.tool dt { color: #a3a3a3; margin-top: 12px; }
+.tool dd { margin-top: 4px; }
+.tool summary { cursor: pointer; padding: 12px 0; }
+.tool details { border-top: 1px solid #404040; }
+.tool details p { color: #a3a3a3; font-size: 12px; }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 12px; }
+.notice { color: #fde68a !important; background: #f59e0b12; border: 1px solid #f59e0b55; padding: 12px; border-radius: 6px; margin: 16px 0; font-size: 13px; }
+.saved { margin-top: 40px; border-top: 1px solid #303030; padding-top: 28px; }
+.saved h2 span { color: #a3a3a3; font-size: 14px; margin-left: 12px; }
+.optionGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr)); gap: 16px; margin-top: 18px; }
+.optionGrid p { font-size: 13px; color: #a3a3a3; margin: 12px 0; }
+.status { color: #6ee7b7; min-height: 28px; margin-top: 20px; }
+.footer { font-size: 12px; color: #737373; margin-top: 24px; max-width: 900px; line-height: 1.7; }
+@media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .estimate { position: static; } .tool { padding: 24px 16px 48px; } .card { padding: 20px; } }
+@media (max-width: 420px) { .fields { grid-template-columns: 1fr; gap: 0; } .cardTitle { flex-wrap: wrap; } }

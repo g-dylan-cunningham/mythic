@@ -1,0 +1,552 @@
+[
+  {
+    "name": "Screen default",
+    "file": "print-calculator.tsx",
+    "input": {
+      "quantity": 100,
+      "garmentCost": 6.72,
+      "effectiveColors": 3,
+      "specialtyInkTotal": 0,
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "tier": {
+        "label": "100–149",
+        "min": 100,
+        "max": 149,
+        "lowCostMarkup": 1.8,
+        "midCostMarkup": 1.5,
+        "highCostMarkup": 1.45,
+        "lowCostPrintCharge": 0.85,
+        "highCostPrintCharge": 1.25,
+        "smallOrderAdder": 0
+      },
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "markup": 1.8,
+      "printCharge": 0.85,
+      "garmentComponent": 12.096,
+      "decorationComponent": 2.55,
+      "allocatedScreens": 0.9,
+      "baseUnit": 15.546000000000001,
+      "baseTotal": 1554.6000000000001,
+      "baseWithLineItemsTotal": 1554.6000000000001,
+      "baseWithLineItemsUnit": 15.546000000000001,
+      "specialtyInkTotal": 0,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "supportedColorCount": true,
+      "lowUnit": 15.546000000000001,
+      "highUnit": 15.546000000000001,
+      "lowTotal": 1554.6000000000001,
+      "highTotal": 1554.6000000000001
+    }
+  },
+  {
+    "name": "Screen fixed tier price at 149",
+    "file": "print-calculator.tsx",
+    "input": {
+      "quantity": 149,
+      "garmentCost": 6.72,
+      "effectiveColors": 3,
+      "specialtyInkTotal": 0,
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "tier": {
+        "label": "100–149",
+        "min": 100,
+        "max": 149,
+        "lowCostMarkup": 1.8,
+        "midCostMarkup": 1.5,
+        "highCostMarkup": 1.45,
+        "lowCostPrintCharge": 0.85,
+        "highCostPrintCharge": 1.25,
+        "smallOrderAdder": 0
+      },
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "markup": 1.8,
+      "printCharge": 0.85,
+      "garmentComponent": 12.096,
+      "decorationComponent": 2.55,
+      "allocatedScreens": 0.9,
+      "baseUnit": 15.546000000000001,
+      "baseTotal": 2316.3540000000003,
+      "baseWithLineItemsTotal": 2316.3540000000003,
+      "baseWithLineItemsUnit": 15.546000000000001,
+      "specialtyInkTotal": 0,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "supportedColorCount": true,
+      "lowUnit": 15.546000000000001,
+      "highUnit": 15.546000000000001,
+      "lowTotal": 2316.3540000000003,
+      "highTotal": 2316.3540000000003
+    }
+  },
+  {
+    "name": "Screen specialty fee stays separate",
+    "file": "print-calculator.tsx",
+    "input": {
+      "quantity": 100,
+      "garmentCost": 6.72,
+      "effectiveColors": 3,
+      "specialtyInkTotal": 40,
+      "rush": "7-10",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "tier": {
+        "label": "100–149",
+        "min": 100,
+        "max": 149,
+        "lowCostMarkup": 1.8,
+        "midCostMarkup": 1.5,
+        "highCostMarkup": 1.45,
+        "lowCostPrintCharge": 0.85,
+        "highCostPrintCharge": 1.25,
+        "smallOrderAdder": 0
+      },
+      "rushOption": {
+        "value": "7-10",
+        "label": "7–10 business days · +10%",
+        "min": 0.1,
+        "max": 0.1
+      },
+      "markup": 1.8,
+      "printCharge": 0.85,
+      "garmentComponent": 12.096,
+      "decorationComponent": 2.55,
+      "allocatedScreens": 0.9,
+      "baseUnit": 15.546000000000001,
+      "baseTotal": 1554.6000000000001,
+      "baseWithLineItemsTotal": 1594.6000000000001,
+      "baseWithLineItemsUnit": 15.546000000000001,
+      "specialtyInkTotal": 40,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "supportedColorCount": true,
+      "lowUnit": 17.100600000000004,
+      "highUnit": 17.100600000000004,
+      "lowTotal": 1750.0600000000004,
+      "highTotal": 1750.0600000000004
+    }
+  },
+  {
+    "name": "Screen below minimum",
+    "file": "print-calculator.tsx",
+    "input": {
+      "quantity": 11,
+      "garmentCost": 6.72,
+      "effectiveColors": 3,
+      "specialtyInkTotal": 0,
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "supportedColorCount": true
+    }
+  },
+  {
+    "name": "Embroidery default",
+    "file": "embroidery-calculator.tsx",
+    "input": {
+      "quantity": 50,
+      "garmentCost": 10.5,
+      "stitches": 7500,
+      "mode": "supplied",
+      "newDesign": true,
+      "puff": false,
+      "hatLocations": 0,
+      "hemTags": false,
+      "stitchOuts": 0,
+      "colorChanges": 0,
+      "winterSurcharge": 0,
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "valid": true,
+      "quantityTier": {
+        "label": "50–99",
+        "min": 50,
+        "max": 99
+      },
+      "stitchLabel": "Up to 7,500 (small to average LC or Hat)",
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "markup": 1.6,
+      "garmentComponent": 16.8,
+      "embroideryComponent": 5,
+      "stitchOverage": 0,
+      "puffPerItem": 0,
+      "hatLocationsPerItem": 0,
+      "hemTagPerItem": 0,
+      "winterSurcharge": 0,
+      "addOnsPerItem": 0,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "unitBeforeProjectFees": 21.8,
+      "digitizingFee": 0,
+      "stitchOutFee": 0,
+      "colorChangeFee": 0,
+      "projectFees": 0,
+      "calculatedSubtotal": 1090,
+      "subtotal": 1090,
+      "minimumApplied": false,
+      "lowTotal": 1090,
+      "highTotal": 1090,
+      "lowUnit": 21.8,
+      "highUnit": 21.8
+    }
+  },
+  {
+    "name": "Embroidery minimum and digitizing",
+    "file": "embroidery-calculator.tsx",
+    "input": {
+      "quantity": 1,
+      "garmentCost": 0,
+      "stitches": 7500,
+      "mode": "supplied",
+      "newDesign": true,
+      "puff": false,
+      "hatLocations": 0,
+      "hemTags": false,
+      "stitchOuts": 0,
+      "colorChanges": 0,
+      "winterSurcharge": 0,
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "valid": true,
+      "quantityTier": {
+        "label": "1–11",
+        "min": 1,
+        "max": 11
+      },
+      "stitchLabel": "Up to 7,500 (small to average LC or Hat)",
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "markup": 2.5,
+      "garmentComponent": 0,
+      "embroideryComponent": 12,
+      "stitchOverage": 0,
+      "puffPerItem": 0,
+      "hatLocationsPerItem": 0,
+      "hemTagPerItem": 0,
+      "winterSurcharge": 0,
+      "addOnsPerItem": 0,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "unitBeforeProjectFees": 12,
+      "digitizingFee": 25,
+      "stitchOutFee": 0,
+      "colorChangeFee": 0,
+      "projectFees": 25,
+      "calculatedSubtotal": 37,
+      "subtotal": 50,
+      "minimumApplied": true,
+      "lowTotal": 50,
+      "highTotal": 50,
+      "lowUnit": 12,
+      "highUnit": 12
+    }
+  },
+  {
+    "name": "DTF default",
+    "file": "dtg-dtf-calculator.tsx",
+    "input": {
+      "quantity": 50,
+      "garmentCost": 4.5,
+      "method": "dtf",
+      "garmentPreparation": "light",
+      "firstLocation": "full",
+      "secondLocation": "none",
+      "thirdLocation": "none",
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "valid": true,
+      "quantityTier": {
+        "label": "50–99",
+        "min": 50,
+        "max": 99
+      },
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "selectedFirst": {
+        "label": "Full chest",
+        "rates": [
+          12,
+          9,
+          8,
+          7.5,
+          7,
+          6.5
+        ]
+      },
+      "second": null,
+      "third": null,
+      "markup": 1.8,
+      "garmentComponent": 8.1,
+      "firstLocationRate": 7.5,
+      "secondLocationRate": 0,
+      "thirdLocationRate": 0,
+      "preparationAdjustment": 0,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "baseUnit": 15.6,
+      "baseTotal": 780,
+      "lowTotal": 780,
+      "highTotal": 780,
+      "lowUnit": 15.6,
+      "highUnit": 15.6,
+      "belowMinimum": false
+    }
+  },
+  {
+    "name": "DTG light preparation",
+    "file": "dtg-dtf-calculator.tsx",
+    "input": {
+      "quantity": 50,
+      "garmentCost": 4.5,
+      "method": "dtg",
+      "garmentPreparation": "light",
+      "firstLocation": "full",
+      "secondLocation": "none",
+      "thirdLocation": "none",
+      "rush": "standard",
+      "finishing": {
+        "service": "none",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "valid": true,
+      "quantityTier": {
+        "label": "50–99",
+        "min": 50,
+        "max": 99
+      },
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "selectedFirst": {
+        "label": "Full chest",
+        "rates": [
+          12,
+          9,
+          8,
+          7.5,
+          7,
+          6.5
+        ]
+      },
+      "second": null,
+      "third": null,
+      "markup": 1.8,
+      "garmentComponent": 8.1,
+      "firstLocationRate": 7.5,
+      "secondLocationRate": 0,
+      "thirdLocationRate": 0,
+      "preparationAdjustment": -1,
+      "finishingPricing": {
+        "serviceLabel": "No folding / packaging",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": false,
+        "summary": "None"
+      },
+      "baseUnit": 14.6,
+      "baseTotal": 730,
+      "lowTotal": 730,
+      "highTotal": 730,
+      "lowUnit": 14.6,
+      "highUnit": 14.6,
+      "belowMinimum": false
+    }
+  },
+  {
+    "name": "Finishing below 25",
+    "file": "dtg-dtf-calculator.tsx",
+    "input": {
+      "quantity": 24,
+      "garmentCost": 4.5,
+      "method": "dtf",
+      "garmentPreparation": "light",
+      "firstLocation": "full",
+      "secondLocation": "none",
+      "thirdLocation": "none",
+      "rush": "standard",
+      "finishing": {
+        "service": "fold",
+        "steamingRate": 0,
+        "insideTags": false
+      }
+    },
+    "result": {
+      "valid": true,
+      "quantityTier": {
+        "label": "12–24",
+        "min": 12,
+        "max": 24
+      },
+      "rushOption": {
+        "value": "standard",
+        "label": "Standard · 10–15 business days",
+        "min": 0,
+        "max": 0
+      },
+      "selectedFirst": {
+        "label": "Full chest",
+        "rates": [
+          12,
+          9,
+          8,
+          7.5,
+          7,
+          6.5
+        ]
+      },
+      "second": null,
+      "third": null,
+      "markup": 1.8,
+      "garmentComponent": 8.1,
+      "firstLocationRate": 9,
+      "secondLocationRate": 0,
+      "thirdLocationRate": 0,
+      "preparationAdjustment": 0,
+      "finishingPricing": {
+        "serviceLabel": "Fold only",
+        "serviceRate": 0,
+        "insideTagRate": 0,
+        "steamingRate": 0,
+        "perItem": 0,
+        "total": 0,
+        "needsReview": true,
+        "summary": "Fold only"
+      },
+      "baseUnit": 17.1,
+      "baseTotal": 410.40000000000003,
+      "lowTotal": 410.40000000000003,
+      "highTotal": 410.40000000000003,
+      "lowUnit": 17.1,
+      "highUnit": 17.1,
+      "belowMinimum": false
+    }
+  }
+]
