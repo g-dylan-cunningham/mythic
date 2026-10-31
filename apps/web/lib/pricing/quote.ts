@@ -9,7 +9,7 @@ export function snapshot(quote: Quote, service: Service, project: string, garmen
     id: crypto.randomUUID(), name: project.trim() || "Untitled quote", service,
     project: project.trim() || "Untitled quote", subtitle: `${quantity} × ${garment.trim() || "Garment"} · ${serviceLabels[service]}`,
     unitPrice: quote.review ? "Approval required" : range(quote.lowUnit, quote.highUnit),
-    total: quote.review ? `${money(quote.lowTotal)}+ (provisional)` : range(quote.lowTotal, quote.highTotal),
+    total: quote.review ? `${money(quote.provisionalTotal)}+ (provisional)` : range(quote.lowTotal, quote.highTotal),
     facts: [{ label: "Quantity tier", value: quote.tier }, ...quote.details.map(d => ({ label: d.label, value: money(d.value) })),
       ...quote.reviewReasons.map(value => ({ label: "Review", value }))],
   };

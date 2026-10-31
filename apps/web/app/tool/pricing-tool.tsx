@@ -106,7 +106,7 @@ function Calculator({ service, userId }: { service: Service; userId: string }) {
         <h2>{project || "Untitled quote"}</h2><p>{input.quantity || "—"} × {garment || "Garment"}</p>
         {quote.valid ? <>
           <p className={styles.unitLabel}>SELLING PRICE / PIECE</p><p className={styles.price}>{quote.review ? "Approval required" : range(quote.lowUnit, quote.highUnit)}</p>
-          <div className={styles.total}><span>Estimated order total</span><strong>{quote.review ? `${money(quote.lowTotal)}+` : range(quote.lowTotal, quote.highTotal)}</strong></div>
+          <div className={styles.total}><span>{quote.review ? "Provisional base total" : "Estimated order total"}</span><strong>{quote.review ? `${money(quote.provisionalTotal)}+` : range(quote.lowTotal, quote.highTotal)}</strong></div>
           {quote.reviewReasons.map(reason => <p key={reason} className={styles.notice}>{reason}</p>)}
           <dl><dt>Quantity tier</dt><dd>{quote.tier}</dd><dt>Turnaround</dt><dd>{rushOptions.find(r => r.value === input.rush)?.label}</dd><dt>Project fees</dt><dd>{money(quote.projectFees)}</dd></dl>
           <details><summary>Pricing detail</summary><dl>{quote.details.map(d => <div key={d.label}><dt>{d.label}</dt><dd>{money(d.value)}</dd></div>)}</dl><p>Project fees are separate from the displayed unit price. Totals retain full precision until display.</p></details>

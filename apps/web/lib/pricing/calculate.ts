@@ -33,10 +33,10 @@ export function finishingPrice(quantity: number, input: Finishing) {
 export type Quote = {
   valid: boolean; error?: string; review: boolean; reviewReasons: string[];
   lowUnit: number; highUnit: number; lowTotal: number; highTotal: number;
-  baseUnit: number; projectFees: number; tier: string;
+  baseUnit: number; provisionalTotal: number; projectFees: number; tier: string;
   details: { label: string; value: number }[];
 };
-const invalid = (error: string): Quote => ({ valid: false, error, review: true, reviewReasons: [error], lowUnit: 0, highUnit: 0, lowTotal: 0, highTotal: 0, baseUnit: 0, projectFees: 0, tier: "Outside matrix", details: [] });
+const invalid = (error: string): Quote => ({ valid: false, error, review: true, reviewReasons: [error], lowUnit: 0, highUnit: 0, lowTotal: 0, highTotal: 0, baseUnit: 0, provisionalTotal: 0, projectFees: 0, tier: "Outside matrix", details: [] });
 export function calculate(input: PricingInput): Quote {
   const { service, quantity: q, garmentCost: cost } = input;
   if (!Number.isSafeInteger(q) || q < 1 || !Number.isFinite(cost) || cost < 0) return invalid("Enter a whole quantity and a nonnegative garment cost.");
@@ -101,6 +101,6 @@ export function calculate(input: PricingInput): Quote {
   const lowTotal = subtotal * (1 + rush.min) + (service === "print" ? fees : 0);
   const highTotal = subtotal * (1 + rush.max) + (service === "print" ? fees : 0);
   if (![unit, fees, lowUnit, highUnit, lowTotal, highTotal].every(Number.isFinite)) return invalid("Inputs exceed the supported pricing range.");
-  return { valid: true, review: reviewReasons.length > 0, reviewReasons, lowUnit, highUnit, lowTotal, highTotal, baseUnit: unit, projectFees: fees, tier,
+  return { valid: true, review: reviewReasons.length > 0, reviewReasons, lowUnit, highUnit, lowTotal, highTotal, baseUnit: unit, provisionalTotal: subtotal + (service === "print" ? fees : 0), projectFees: fees, tier,
     details: [...details, { label: "Finishing / piece", value: finishing.perItem }, { label: "One-time project fees", value: fees }] };
 }

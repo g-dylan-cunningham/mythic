@@ -68,6 +68,9 @@ test("DTF hats, DTG preparation, rush ranges and review paths", () => {
   assert.equal(calculate({ ...input, rush: "same-day" }).review, true);
   assert.equal(calculate({ ...input, quantity: 2.5 }).valid, false);
   assert.equal(calculate({ ...input, garmentCost: NaN }).valid, false);
+  const review = calculate({ ...input, quantity: 24, rush: "under-72", finishing: { service: "fold", steamingRate: 0, insideTags: false } });
+  near(review.provisionalTotal, 410.4);
+  assert.equal(snapshot(review, input.service, "Review", "Tee", 24).total, "$410.40+ (provisional)");
 });
 test("finishing boundaries and steaming while review matrix charges are zero", () => {
   const finishing = { service: "fold", insideTags: true, steamingRate: 1.25 };
