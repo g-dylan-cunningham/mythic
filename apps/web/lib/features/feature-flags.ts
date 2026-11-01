@@ -1,8 +1,10 @@
 import type { Profile } from "@/lib/auth/roles";
+import { migratedTools } from "../tools/catalog.ts";
 import { apparelOrderingRollout } from "../apparel-ordering/rollout.ts";
 
 export const FEATURE_KEYS = [
   "apparelOrdering",
+  "pricing",
   "ssInventory",
   "printavoFetching",
   "productionSuite",
@@ -17,6 +19,7 @@ const retainedFeaturesEnabled =
 
 export const featureFlags: FeatureFlags = Object.freeze({
   apparelOrdering: apparelOrderingRollout.featureEnabled,
+  pricing: true,
   ssInventory: true,
   printavoFetching: true,
   productionSuite: retainedFeaturesEnabled,
@@ -42,6 +45,8 @@ export function canAccessFeatureWithFlags(
   }
 
   switch (feature) {
+    case "pricing":
+      return true;
     case "apparelOrdering":
       return false;
     case "ssInventory":
@@ -62,6 +67,7 @@ export function canAccessFeature(
 }
 
 export const dashboardTools = [
+  ...migratedTools,
   {
     description:
       "Look up S&S styles and SKUs, check availability, and review warehouse quantities.",
