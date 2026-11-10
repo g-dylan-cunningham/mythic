@@ -643,6 +643,12 @@ export default async function ApparelOrderSessionPage({
               <span className="text-xs text-neutral-500">
                 Read-only preview for this entire order
               </span>
+              <Link
+                className="inline-flex h-10 items-center rounded-md border border-neutral-700 px-4 text-sm font-medium text-neutral-200 transition hover:bg-neutral-900"
+                href="/apparel-orders/batch"
+              >
+                Test drive last 5 orders
+              </Link>
             </div>
           ) : null}
         </header>

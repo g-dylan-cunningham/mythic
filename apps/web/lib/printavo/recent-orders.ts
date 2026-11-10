@@ -5,6 +5,7 @@ import {
 } from "@/lib/printavo/client";
 import {
   type ApparelOrderReadiness,
+  classifyApparelLineForSourcing,
   getApparelOrderReadiness,
   type PrintavoOrderDetails,
   type PrintavoOrderSummary,
@@ -82,6 +83,20 @@ export type RecentPrintavoOrdersResult =
       lastQuery: null;
       ok: false;
       orders: [];
+    };
+
+export type HistoricalPrintavoOrdersResult =
+  | {
+      error: null;
+      ok: true;
+      orders: PrintavoOrderDetails[];
+      scannedOrderCount: number;
+    }
+  | {
+      error: string;
+      ok: false;
+      orders: [];
+      scannedOrderCount: number;
     };
 
 function isPrintavoOrder(value: unknown): value is PrintavoOrder {
@@ -303,6 +318,57 @@ export async function getLatestPrintavoOrder(
   }
 
   return summarizePrintavoOrderDetails(data.payload, data.fetched_at);
+}
+
+/**
+ * Returns the newest saved Printavo orders that contain apparel already marked
+ * ordered. The wider scan is intentional: a recent quote or non-apparel job
+ * should not displace a historical order that can actually be test-driven.
+ */
+export async function getRecentHistoricalPrintavoOrders(
+  supabase: SupabaseClient,
+  limit = 5,
+): Promise<HistoricalPrintavoOrdersResult> {
+  const requestedLimit = Math.min(Math.max(limit, 1), 25);
+  const scanLimit = Math.min(Math.max(requestedLimit * 20, 50), 500);
+  const { data: rows, error } = await supabase
+    .from("latest_printavo_order_payloads")
+    .select("printavo_order_id,payload,fetched_at,sort_at")
+    .order("sort_at", { ascending: false })
+    .order("printavo_order_id", { ascending: false })
+    .limit(scanLimit)
+    .returns<LatestOrderRow[]>();
+
+  if (error) {
+    return {
+      error: `Could not load historical Printavo orders: ${error.message}`,
+      ok: false,
+      orders: [],
+      scannedOrderCount: 0,
+    };
+  }
+
+  const orders = (rows ?? []).flatMap((row) => {
+    if (!isPrintavoOrder(row.payload)) {
+      return [];
+    }
+
+    const order = summarizePrintavoOrderDetails(row.payload, row.fetched_at);
+    const hasOrderedApparel = order.lineItems.some(
+      (lineItem) =>
+        classifyApparelLineForSourcing(lineItem).disposition ===
+        "already_ordered",
+    );
+
+    return hasOrderedApparel ? [order] : [];
+  });
+
+  return {
+    error: null,
+    ok: true,
+    orders: orders.slice(0, requestedLimit),
+    scannedOrderCount: rows?.length ?? 0,
+  };
 }
 
 export async function refreshPrintavoOrder(
